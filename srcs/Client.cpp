@@ -35,6 +35,11 @@ void Client::clearBuffer()
     _buffer.clear();
 }
 
+void Client::printBuffer() const
+{
+    std::cout << "Client Buffer: " << _buffer << std::endl;
+}
+
 void Client::sendMessage(const std::string& msg) const
 {
     send(_fd, msg.c_str(), msg.length(), 0);
@@ -108,4 +113,29 @@ void Client::setRegistered(bool registered)
 std::vector<std::string>& Client::getChannels()
 {
     return _channels;
+}
+
+void Client::addChannel(const std::string& channel)
+{
+    for (std::vector<std::string>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+    {
+        if (*it == channel)
+            return; // Channel already in list
+    }
+    _channels.push_back(channel);
+}
+
+void Client::printClientInfo() const
+{
+    std::cout << "Client FD: " << _fd << std::endl;
+    std::cout << "Nickname: " << _nickname << std::endl;
+    std::cout << "Username: " << _username << std::endl;
+    std::cout << "Realname: " << _realname << std::endl;
+    std::cout << "Hostname: " << _hostname << std::endl;
+    std::cout << "Authenticated: " << (_authenticated ? "Yes" : "No") << std::endl;
+    std::cout << "Registered: " << (_registered ? "Yes" : "No") << std::endl;
+    std::cout << "Channels: ";
+    for (std::vector<std::string>::const_iterator it = _channels.begin(); it != _channels.end(); ++it)
+        std::cout << *it << " ";
+    std::cout << std::endl;
 }

@@ -14,7 +14,7 @@ void Channel::addClient(Client* client)
     // Check if client is already in channel
     if (isClientInChannel(client))
         return;
-    
+
     _clients.push_back(client);
     client->getChannels().push_back(_name);
 }
