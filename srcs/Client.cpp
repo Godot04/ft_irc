@@ -1,7 +1,7 @@
 #include "../inc/ft_irc.hpp"
 
 Client::Client(int fd) 
-    : _fd(fd), _authenticated(false), _registered(false)
+    : _fd(fd), _authenticated(false), _registered(false), _isCAPNegotiation(false)
 {
 }
 
@@ -21,7 +21,7 @@ bool Client::hasCompleteMessage() const
 
 std::string Client::getNextMessage()
 {
-    size_t pos = _buffer.find("\\r\\n");
+    size_t pos = _buffer.find("\r\n");
     if (pos == std::string::npos)
         return "";
     
@@ -123,6 +123,21 @@ void Client::addChannel(const std::string& channel)
             return; // Channel already in list
     }
     _channels.push_back(channel);
+}
+
+std::string const & Client::getBuffer() const
+{
+    return _buffer;
+}
+
+bool Client::isCAPNegotiation() const
+{
+    return _isCAPNegotiation;
+}
+
+void Client::setCAPNegotiation(bool status)
+{
+    _isCAPNegotiation = status;
 }
 
 void Client::printClientInfo() const

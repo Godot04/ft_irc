@@ -13,6 +13,7 @@ private:
     std::string         _hostname;
     bool                _authenticated;
     bool                _registered;
+    bool                _isCAPNegotiation;
     std::vector<std::string> _channels;
     std::string         _buffer;
 
@@ -21,6 +22,7 @@ public:
     ~Client();
 
     void                addToBuffer(const std::string& msg);
+    const std::string&  getBuffer() const;
     bool                hasCompleteMessage() const;
     std::string         getNextMessage();
     void                clearBuffer();
@@ -45,6 +47,9 @@ public:
     void                setRegistered(bool registered);
     std::vector<std::string>& getChannels();
 	void				printClientInfo() const;
+    bool				isCAPNegotiation() const;
+    void                setCAPNegotiation(bool status);
+
 };
 
 #endif

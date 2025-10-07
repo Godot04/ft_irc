@@ -10,7 +10,6 @@ Server::Server(int port, const std::string& password)
     _socket = socket(AF_INET, SOCK_STREAM, 0);
     if (_socket < 0)
         throw std::runtime_error("Failed to create socket");
-    
     // Set socket options
 	// SOL_SOCKET to manipulate options at the sockets API level
 	// SO_REUSEADDR to allow reuse of local addresses address:port. 
@@ -102,7 +101,6 @@ void Server::start()
                 continue;
             throw std::runtime_error("Poll failed");
         }
-        
         // Check for activity on each socket
         for (size_t i = 0; i < _pollfds.size(); ++i)
         {
@@ -170,15 +168,17 @@ void Server::handleNewConnection()
     std::cout << "New connection from " << client->getHostname() << " (fd: " << client_fd << ")" << std::endl;
 
     // Send welcome message
-    client->sendMessage(":" + std::string("ft_irc") + " NOTICE * :*** Please enter password with /PASS <password>\\r\\n");
+    client->sendMessage(":" + std::string("ft_irc") + " NOTICE * :*** Please enter password with /PASS <password>\r\n");
 }
 
+// bla-bla
 void Server::handleClientMessage(int clientfd)
 {
+    // Recieve message 
     Client *client = _clients[clientfd];
     char buffer[BUFFER_SIZE + 1];
     memset(buffer, 0, sizeof(buffer));
-    
+
     ssize_t bytes_read = recv(clientfd, buffer, BUFFER_SIZE, 0);
     if (bytes_read <= 0)
     {
@@ -186,83 +186,177 @@ void Server::handleClientMessage(int clientfd)
             removeClient(clientfd);
         return;
     }
-    
+    std::cout << "Received message from client " << clientfd << ": " << buffer << std::endl;
+    std::cout << " ========================= " << std::endl;
     // Add to client's buffer
     client->addToBuffer(std::string(buffer, bytes_read));
-    // Process complete messages
-    while (client->hasCompleteMessage()) // it is true if message contains end of line \r\n
-    {
-        std::string message = client->getNextMessage(); // extracts message until \r\n from buffer
-        std::cout << "Received message from client " << clientfd << ": " << message << std::endl;
 
-        // Parse message
+    // Process complete messages
+    std::string message = client->getNextMessage();
+    std::cout << "message: " << message << std::endl;
+    while (!message.empty()) {
+        std::cout << "Segment: " << message << std::endl;
         std::istringstream iss(message);
-        std::string command;
-        iss >> command;
-        if (command == "PASS")
-        {
+        // std::string command;
+        // iss >> command;
+        if (!client->isRegistered()) {
+            registerClient(client, iss);
+        }
+        // if client registered then handle other commands
+        // other message handling cannot proceed until CAP END is received (don't register until registered)
+        message = client->getNextMessage();
+    }
+    client->printClientInfo();
+    client->clearBuffer();
+    // while (!message.empty()) {
+    //     std::cout << "Segment: " << message << std::endl;
+    //     client->sendMessage("CAP * LS :\r\n");
+    //     message = client->getNextMessage();
+    // }
+    // only start registering when CAP END is received
+
+    // while (client->hasCompleteMessage()) // it is true if message contains end of line \r\n
+    // {
+    //     std::string message = client->getNextMessage(); // extracts message until \r\n from buffer
+    //     // std::cout << "Received message from client " << clientfd << ": " << message << std::endl;
+
+    //     // Parse message
+    //     std::istringstream iss(message);
+    //     // std::string command;
+    //     // iss >> command;
+    //     // if isAuthenticated is false then check for password first
+    //     // if isRegistered is false then check for NICK and USER
+    //     // if both are true then allow other commands
+    //     if (client->isRegistered() == false) {
+    //         registerClient(client, iss);
+    //         return ;
+    //     }
+    //     // handle commands
+    //     // handleCommands
+    //     // if (command == "PASS")
+    //     // {
+    //     //     processPassword(client, iss);
+    //     // }
+    //     // else if (command == "NICK")
+    //     // {
+    //     //     processNick(client, iss);
+    //     // }
+    //     // else if (command == "USER")
+    //     // {
+    //     //     processUser(client, iss);
+    //     // }
+    //     // else {
+    //     //     client->sendMessage(":server 421 * " + command + " :Unknown command\\r\\n");
+    //     // }
+    //     client->clearBuffer();
+    //     if (client->isAuthenticated() && client->isNicknameSet() && client->isUsernameSet())
+    //     {
+    //         std::cout << "inside channel join" << std::endl;
+    //         if (client->getChannels().empty()) {
+    //             std::string defaultChannel = "#general";
+    //             Channel* channel;
+    //             if (_channels.find(defaultChannel) == _channels.end()) {
+    //                 channel = new Channel(defaultChannel);
+    //                 _channels[defaultChannel] = channel;
+    //             } else {
+    //                 channel = _channels[defaultChannel];
+    //             }
+    //             channel->addClient(client);
+    //             client->addChannel(defaultChannel);
+    //             channel->broadcast(":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n", client);
+    //             client->sendMessage(":server 332 " + client->getNickname() + " " + defaultChannel + " :Welcome to the general channel\r\n");
+    //         }
+    //     }
+    //     // else if (command == "PING")
+    //     // {
+    //     //     std::string token;
+    //     //     iss >> token;
+    //     //     client->sendMessage("PONG " + token + "\\r\\n");
+    //     // }
+    //     // else if (command == "QUIT")
+    //     // {
+    //     //     std::string reason;
+    //     //     std::getline(iss, reason);
+    //     //     if (!reason.empty() && reason[0] == ':')
+    //     //         reason = reason.substr(1);
+            
+    //     //     // Broadcast quit message to channels
+    //     //     std::string quit_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() 
+    //     //         + " QUIT :" + (reason.empty() ? "Client Quit" : reason) + "\\r\\n";
+            
+    //     //     for (std::vector<std::string>::iterator it = client->getChannels().begin(); it != client->getChannels().end(); ++it)
+    //     //     {
+    //     //         Channel *channel = _channels[*it];
+    //     //         if (channel)
+    //     //             channel->broadcast(quit_msg, client);
+    //     //     }
+            
+    //     //     removeClient(clientfd);
+    //     //     return;
+    //     // }
+    //     // Add more command handlers here for a complete IRC server
+
+    // }
+    // client->printClientInfo();
+}
+
+void Server::handleCAP(Client* client, std::istringstream& iss) {
+    std::string subcommand;
+    iss >> subcommand;
+    if (!client->isCAPNegotiation()) {
+        if (subcommand == "LS") {
+            client->sendMessage("CAP * LS :\r\n");
+            client->setCAPNegotiation(true);
+        }
+        else if (subcommand == "REQ") {
+            client->sendMessage("CAP * ACK :\r\n");
+            client->setCAPNegotiation(true);
+        }
+    }
+    else if (subcommand == "END") {
+        client->setCAPNegotiation(false);
+    }
+}
+
+void Server::registerClient(Client* client, std::istringstream& iss) {
+    std::string command;
+    iss >> command;
+    if (command == "CAP") {
+        handleCAP(client, iss);
+    }
+    else if (!client->isAuthenticated()) {
+        if (command == "PASS") {
+            std::cout << "REACHED PASS HANDLER" << std::endl;
             processPassword(client, iss);
         }
-        else if (command == "NICK")
-        {
-            processNick(client, iss);
-        }
-        else if (command == "USER")
-        {
-            processUser(client, iss);
-        }
         else {
-            client->sendMessage(":server 421 * " + command + " :Unknown command\\r\\n");
+            client->sendMessage(":server 464 * :You must send PASS first\\r\\n");
+            return ;
         }
-        client->clearBuffer();
-        if (client->isAuthenticated() && client->isNicknameSet() && client->isUsernameSet())
-        {
-            std::cout << "inside channel join" << std::endl;
-            if (client->getChannels().empty()) {
-                std::string defaultChannel = "#general";
-                Channel* channel;
-                if (_channels.find(defaultChannel) == _channels.end()) {
-                    channel = new Channel(defaultChannel);
-                    _channels[defaultChannel] = channel;
-                } else {
-                    channel = _channels[defaultChannel];
-                }
-                channel->addClient(client);
-                client->addChannel(defaultChannel);
-                channel->broadcast(":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n", client);
-                client->sendMessage(":server 332 " + client->getNickname() + " " + defaultChannel + " :Welcome to the general channel\r\n");
-            }
-        }
-        // else if (command == "PING")
-        // {
-        //     std::string token;
-        //     iss >> token;
-        //     client->sendMessage("PONG " + token + "\\r\\n");
-        // }
-        // else if (command == "QUIT")
-        // {
-        //     std::string reason;
-        //     std::getline(iss, reason);
-        //     if (!reason.empty() && reason[0] == ':')
-        //         reason = reason.substr(1);
-            
-        //     // Broadcast quit message to channels
-        //     std::string quit_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() 
-        //         + " QUIT :" + (reason.empty() ? "Client Quit" : reason) + "\\r\\n";
-            
-        //     for (std::vector<std::string>::iterator it = client->getChannels().begin(); it != client->getChannels().end(); ++it)
-        //     {
-        //         Channel *channel = _channels[*it];
-        //         if (channel)
-        //             channel->broadcast(quit_msg, client);
-        //     }
-            
-        //     removeClient(clientfd);
-        //     return;
-        // }
-        // Add more command handlers here for a complete IRC server
-
     }
+    else if (!client->isNicknameSet())
+    {
+        if (command == "NICK")
+            processNick(client, iss);
+        else {
+            client->sendMessage(":server 451 * :You must set your nickname with NICK <nickname>\\r\\n");
+            return ;
+        }
+    }
+    else if (!client->isUsernameSet())
+    {
+        if (command == "USER")
+            processUser(client, iss);
+        else {
+            client->sendMessage(":server 451 * :You must set your username first with USER <username> <hostname> <servername> :<realname>\\r\\n");
+            return ;
+        }
+    }
+    else {
+        client->sendMessage(":server 421 * " + command + " :Unknown command Hint: PASS, NICK, USER\\r\\n");
+    }
+    if (client->isAuthenticated() && client->isNicknameSet() && client->isUsernameSet() && client->isCAPNegotiation() == false)
+        client->setRegistered(true);
 }
 
 void Server::processPassword(Client* client, std::istringstream& iss) {
@@ -308,20 +402,14 @@ void Server::processNick(Client* client, std::istringstream& iss) {
     else
     {
         client->setNickname(nickname);
-        client->sendMessage(":server 001 " + nickname + " :Welcome to the ft_irc server\\r\\n");
-
-        if (client->getUsername().empty() == false)
-            client->setRegistered(true);
+        // client->sendMessage(":server 001 " + nickname + " :Welcome to the ft_irc server\\r\\n");
+        // if (client->getUsername().empty() == false)
+        //     client->setRegistered(true);
     }
 }
 
 void Server::processUser(Client* client, std::istringstream& iss) {
-    if (!client->isAuthenticated())
-    {
-        client->sendMessage(":server 464 * :You must send PASS first\\r\\n");
-        return ;
-    }
-    
+  
     std::string username, hostname, servername, realname;
     iss >> username >> hostname >> servername;
     

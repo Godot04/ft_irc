@@ -9,6 +9,7 @@ int main(int argc, char **argv)
     }
     
     int port = std::atoi(argv[1]);
+    // check if port is between 1024 and 65535??
     if (port <= 0 || port > 65535)
     {
         std::cerr << "Error: Invalid port number" << std::endl;
