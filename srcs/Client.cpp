@@ -1,7 +1,7 @@
 #include "../inc/ft_irc.hpp"
 
 Client::Client(int fd) 
-    : _fd(fd), _authenticated(false), _registered(false)
+    : _fd(fd), _authenticated(false), _registered(false), _isCAPNegotiation(false)
 {
 }
 
@@ -21,7 +21,7 @@ bool Client::hasCompleteMessage() const
 
 std::string Client::getNextMessage()
 {
-    size_t pos = _buffer.find("\\r\\n");
+    size_t pos = _buffer.find("\r\n");
     if (pos == std::string::npos)
         return "";
     
@@ -33,6 +33,11 @@ std::string Client::getNextMessage()
 void Client::clearBuffer()
 {
     _buffer.clear();
+}
+
+void Client::printBuffer() const
+{
+    std::cout << "Client Buffer: " << _buffer << std::endl;
 }
 
 void Client::sendMessage(const std::string& msg) const
@@ -108,4 +113,44 @@ void Client::setRegistered(bool registered)
 std::vector<std::string>& Client::getChannels()
 {
     return _channels;
+}
+
+void Client::addChannel(const std::string& channel)
+{
+    for (std::vector<std::string>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+    {
+        if (*it == channel)
+            return; // Channel already in list
+    }
+    _channels.push_back(channel);
+}
+
+std::string const & Client::getBuffer() const
+{
+    return _buffer;
+}
+
+bool Client::isCAPNegotiation() const
+{
+    return _isCAPNegotiation;
+}
+
+void Client::setCAPNegotiation(bool status)
+{
+    _isCAPNegotiation = status;
+}
+
+void Client::printClientInfo() const
+{
+    std::cout << "Client FD: " << _fd << std::endl;
+    std::cout << "Nickname: " << _nickname << std::endl;
+    std::cout << "Username: " << _username << std::endl;
+    std::cout << "Realname: " << _realname << std::endl;
+    std::cout << "Hostname: " << _hostname << std::endl;
+    std::cout << "Authenticated: " << (_authenticated ? "Yes" : "No") << std::endl;
+    std::cout << "Registered: " << (_registered ? "Yes" : "No") << std::endl;
+    std::cout << "Channels: ";
+    for (std::vector<std::string>::const_iterator it = _channels.begin(); it != _channels.end(); ++it)
+        std::cout << *it << " ";
+    std::cout << std::endl;
 }
