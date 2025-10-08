@@ -20,8 +20,8 @@ private:
     int                     _port;
     std::string             _password;
     struct sockaddr_in      _address;
-    std::vector<pollfd>     _pollfds;
-    std::map<int, Client*>  _clients;
+    std::vector<pollfd>     _pollfds;  // pfd | plfd | plfd ....xpfd   (push_back(xpfd))
+    std::map<int, Client*>  _clients;    // key - value pair.  key should be unique. 12 - popov 13 - khojazo   (_clients.at(12) - returns popov
     std::map<std::string, Channel*> _channels; // next step is to make it possible for clients to create channels
 
 public:
@@ -31,10 +31,12 @@ public:
     void    start();
     void    handleNewConnection();
     void    handleClientMessage(int clientfd);
+    void    handleClientCommands(Client *client, const std::string &command, std::istringstream &iss);
     void    removeClient(int clientfd);
     void	processPassword(Client* client, std::istringstream& iss);
 	void	processNick(Client* client, std::istringstream& iss);
 	void	processUser(Client* client, std::istringstream& iss);
+    void    processPrivmsg(Client* client, std::istringstream& iss);
     // Getters
     std::map<int, Client*>&              getClients();
     std::map<std::string, Channel*>&     getChannels();

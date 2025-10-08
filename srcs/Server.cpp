@@ -10,11 +10,11 @@ Server::Server(int port, const std::string& password)
     _socket = socket(AF_INET, SOCK_STREAM, 0);
     if (_socket < 0)
         throw std::runtime_error("Failed to create socket");
-    
+
     // Set socket options
 	// SOL_SOCKET to manipulate options at the sockets API level
-	// SO_REUSEADDR to allow reuse of local addresses address:port. 
-    // When a socket is closed, that address:port pair is put into a TIME_WAIT state, 
+	// SO_REUSEADDR to allow reuse of local addresses address:port.
+    // When a socket is closed, that address:port pair is put into a TIME_WAIT state,
     // typically for a few minutes. During this time, the address:port pair cannot be reused.
     // Setting this option allows a socket to forcibly bind to a port in use by a socket in TIME_WAIT state.
 	// opt = 1 to enable the option
@@ -27,11 +27,11 @@ Server::Server(int port, const std::string& password)
         close(_socket);
         throw std::runtime_error("Failed to set socket options");
     }
-    
+
     // Set non-blocking mode
     // F_SETFL tells fcntl to set the file status flags to the value given by the third argument.
-    // O_NONBLOCK is a flag that makes I/O on the descriptor non‑blocking: calls like accept(), 
-    // recv(), send() return immediately. If no data/connection is available they return -1 
+    // O_NONBLOCK is a flag that makes I/O on the descriptor non‑blocking: calls like accept(),
+    // recv(), send() return immediately. If no data/connection is available they return -1
     // and set errno to EAGAIN or EWOULDBLOCK instead of waiting.
     if (fcntl(_socket, F_SETFL, O_NONBLOCK) < 0)
     {
@@ -53,22 +53,22 @@ Server::Server(int port, const std::string& password)
     }
 
     // Listen for connections
-    // listen(fd, backlog) marks a previously created and bound TCP socket as passive: 
-    // the kernel will start accepting incoming TCP connection attempts on that socket 
+    // listen(fd, backlog) marks a previously created and bound TCP socket as passive:
+    // the kernel will start accepting incoming TCP connection attempts on that socket
     // and queue them until your program calls accept().
     if (listen(_socket, 10) < 0)
     {
         close(_socket);
         throw std::runtime_error("Failed to listen on socket");
     }
-    
+
     // Add server socket to pollfds
     pollfd pfd;
     pfd.fd = _socket;
     pfd.events = POLLIN;
     pfd.revents = 0;
     _pollfds.push_back(pfd);
-    
+
     std::cout << "Server initialized on port " << _port << std::endl;
 }
 
@@ -80,11 +80,11 @@ Server::~Server()
         close(it->first);
         delete it->second;
     }
-    
+
     // Delete all channels
     for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
         delete it->second;
-    
+
     // Close server socket
     close(_socket);
     std::cout << "Server shut down" << std::endl;
@@ -93,7 +93,7 @@ Server::~Server()
 void Server::start()
 {
     std::cout << "Server started. Waiting for connections..." << std::endl;
-    
+
     while (true)
     {
         if (poll(&_pollfds[0], _pollfds.size(), -1) < 0)
@@ -102,7 +102,6 @@ void Server::start()
                 continue;
             throw std::runtime_error("Poll failed");
         }
-        
         // Check for activity on each socket
         for (size_t i = 0; i < _pollfds.size(); ++i)
         {
@@ -142,7 +141,7 @@ void Server::handleNewConnection()
         std::cerr << "Failed to accept connection: " << strerror(errno) << std::endl;
         return;
     }
-    
+
     // Set non-blocking mode
     if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0)
     {
@@ -161,6 +160,7 @@ void Server::handleNewConnection()
     // Create client
     Client *client = new Client(client_fd);
     _clients[client_fd] = client;
+    // _clients[client_fd] = new Client(client_fd);
 
     // Set hostname
     // inet_ntoa(client_addr.sin_addr) converts the IPv4 address in
@@ -170,7 +170,7 @@ void Server::handleNewConnection()
     std::cout << "New connection from " << client->getHostname() << " (fd: " << client_fd << ")" << std::endl;
 
     // Send welcome message
-    client->sendMessage(":" + std::string("ft_irc") + " NOTICE * :*** Please enter password with /PASS <password>\\r\\n");
+    client->sendMessage(":ft_irc NOTICE * :*** \nPlease enter password with /PASS <password>\\r\\n\n");
 }
 
 void Server::handleClientMessage(int clientfd)
@@ -178,7 +178,7 @@ void Server::handleClientMessage(int clientfd)
     Client *client = _clients[clientfd];
     char buffer[BUFFER_SIZE + 1];
     memset(buffer, 0, sizeof(buffer));
-    
+
     ssize_t bytes_read = recv(clientfd, buffer, BUFFER_SIZE, 0);
     if (bytes_read <= 0)
     {
@@ -186,7 +186,7 @@ void Server::handleClientMessage(int clientfd)
             removeClient(clientfd);
         return;
     }
-    
+
     // Add to client's buffer
     client->addToBuffer(std::string(buffer, bytes_read));
     // Process complete messages
@@ -233,6 +233,7 @@ void Server::handleClientMessage(int clientfd)
                 client->sendMessage(":server 332 " + client->getNickname() + " " + defaultChannel + " :Welcome to the general channel\r\n");
             }
         }
+        handleClientCommands(client, command, iss);
         // else if (command == "PING")
         // {
         //     std::string token;
@@ -245,18 +246,18 @@ void Server::handleClientMessage(int clientfd)
         //     std::getline(iss, reason);
         //     if (!reason.empty() && reason[0] == ':')
         //         reason = reason.substr(1);
-            
+
         //     // Broadcast quit message to channels
-        //     std::string quit_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() 
+        //     std::string quit_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname()
         //         + " QUIT :" + (reason.empty() ? "Client Quit" : reason) + "\\r\\n";
-            
+
         //     for (std::vector<std::string>::iterator it = client->getChannels().begin(); it != client->getChannels().end(); ++it)
         //     {
         //         Channel *channel = _channels[*it];
         //         if (channel)
         //             channel->broadcast(quit_msg, client);
         //     }
-            
+
         //     removeClient(clientfd);
         //     return;
         // }
@@ -265,10 +266,21 @@ void Server::handleClientMessage(int clientfd)
     }
 }
 
+void Server::handleClientCommands(Client *client, const std::string &command, std::istringstream &iss)
+{
+    if (command == "PRIVMSG")
+        processPrivmsg(client, iss);
+}
+
+void    Server::processPrivmsg(Client* client, std::istringstream& iss)
+{
+    
+}
+
 void Server::processPassword(Client* client, std::istringstream& iss) {
     std::string password;
     iss >> password;
-    
+
     if (password == _password)
     {
         client->setAuthenticated(true);
@@ -286,10 +298,8 @@ void Server::processNick(Client* client, std::istringstream& iss) {
         client->sendMessage(":server 464 * :You must send PASS first\\r\\n");
         return ;
     }
-    
     std::string nickname;
     iss >> nickname;
-    
     // Check if nickname is already in use
     bool nickname_in_use = false;
     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
@@ -300,7 +310,6 @@ void Server::processNick(Client* client, std::istringstream& iss) {
             break;
         }
     }
-    
     if (nickname_in_use)
     {
         client->sendMessage(":server 433 * " + nickname + " :Nickname is already in use\\r\\n");
@@ -321,18 +330,15 @@ void Server::processUser(Client* client, std::istringstream& iss) {
         client->sendMessage(":server 464 * :You must send PASS first\\r\\n");
         return ;
     }
-    
     std::string username, hostname, servername, realname;
     iss >> username >> hostname >> servername;
-    
+
     // Parse realname (can contain spaces)
     std::getline(iss, realname);
     if (!realname.empty() && realname[0] == ':')
         realname = realname.substr(1);
-    
     client->setUsername(username);
     client->setRealname(realname);
-    
     if (client->getNickname().empty() == false)
         client->setRegistered(true);
 }
@@ -341,9 +347,7 @@ void Server::removeClient(int clientfd)
 {
     if (_clients.find(clientfd) == _clients.end())
         return;
-    
     Client *client = _clients[clientfd];
-    
     // Remove from channels
     for (std::vector<std::string>::iterator it = client->getChannels().begin(); it != client->getChannels().end(); ++it)
     {
@@ -351,7 +355,6 @@ void Server::removeClient(int clientfd)
         if (channel)
             channel->removeClient(client);
     }
-    
     // Remove from pollfds
     for (std::vector<pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it)
     {
@@ -361,7 +364,6 @@ void Server::removeClient(int clientfd)
             break;
         }
     }
-    
     // Close socket and delete client
     close(clientfd);
     std::cout << "Client disconnected (fd: " << clientfd << ")" << std::endl;
