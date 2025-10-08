@@ -33,10 +33,12 @@ public:
     void    handleClientMessage(int clientfd);
     void    handleClientCommands(Client *client, const std::string &command, std::istringstream &iss);
     void    removeClient(int clientfd);
+    void    registerClient(Client* client, std::istringstream& iss);
     void	processPassword(Client* client, std::istringstream& iss);
 	void	processNick(Client* client, std::istringstream& iss);
 	void	processUser(Client* client, std::istringstream& iss);
     void    processPrivmsg(Client* client, std::istringstream& iss);
+    void    handleCAP(Client* client, std::istringstream& iss);
     // Getters
     std::map<int, Client*>&              getClients();
     std::map<std::string, Channel*>&     getChannels();

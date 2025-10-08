@@ -1,0 +1,87 @@
+ Irssi v1.2.3-1ubuntu4 - https://irssi.org                                      
+18:46 -!-  ___           _
+18:46 -!- |_ _|_ _ _____(_)
+18:46 -!-  | || '_(_-<_-< |
+18:46 -!- |___|_| /__/__/_|
+18:46 -!- Irssi v1.2.3-1ubuntu4 - https://irssi.org
+18:55 -!- Irssi: Looking up localhost
+18:55 -!- Irssi: Connecting to localhost [127.0.0.1] port 1212
+18:55 -!- Irssi: Connection to localhost established
+18:55 -!- Capabilities supported: 
+18:55 -!- Welcome to the Internet Relay Network zkhojazo!zkhojazo@127.0.0.1
+18:55 -!- Your host is ircserv, running version 0.01
+18:55 -!- This server was created 1/08/2025
+18:55 -!- ircserv 0.01 io i
+18:57 -!- You're now known as testuser
+
+
+
+
+
+
+
+ [19:34] [testuser] [1:localhost (change with ^X)]                              
+[(status)] /connect localhost 1200 123
+
+
+
+➜  ~ nc localhost 1212
+pass 123  
+nick test2
+user test2 0 * :Test Two
+:ircserv.42.de 001 test2 :Welcome to the Internet Relay Network test2!test2@127.0.0.1
+:ircserv.42.de 002 test2 :Your host is ircserv, running version 0.01
+:ircserv.42.de 003 test2 :This server was created 1/08/2025
+:ircserv.42.de 004 test2 :ircserv 0.01 io i
+join #testchannel 
+:test2!test2@127.0.0.1 JOIN :#testchannel
+:ircserv.42.de 353 test2 = #testchannel :@test1 test2
+:ircserv.42.de 366 test2 #testchannel :End of NAMES list
+:test1!test1@127.0.0.1 PRIVMSG test2 :hello are there
+:test1!test1@127.0.0.1 KICK #testchannel test2 :goodbye sorry bro
+
+
+
+
+
+
+
+➜  ~ nc localhost 1212
+pass 123
+nick test1
+user * 0 :test One
+:ircserv.42.de 461 test1 USER :Not enough parameters
+user test1 0 * :test one
+:ircserv.42.de 001 test1 :Welcome to the Internet Relay Network test1!test1@127.0.0.1
+:ircserv.42.de 002 test1 :Your host is ircserv, running version 0.01
+:ircserv.42.de 003 test1 :This server was created 1/08/2025
+:ircserv.42.de 004 test1 :ircserv 0.01 io i
+join #testchannel
+:test1!test1@127.0.0.1 JOIN :#testchannel
+:ircserv.42.de 353 test1 = #testchannel :@test1
+:ircserv.42.de 366 test1 #testchannel :End of NAMES list
+privmsg #testchannel :hello from test1
+:test2!test2@127.0.0.1 JOIN :#testchannel
+privmsg #test1 :hello
+:ircserv.42.de 401 test1 #test1 :No such nick/channel
+privmsg #test2 :hello bro
+:ircserv.42.de 401 test1 #test2 :No such nick/channel
+privmsg test2 :hello are there
+kick test2 :sorry  
+:ircserv.42.de 403 test1 test2 :No such channel
+kick #testchannel test2 :goodbye sorry bro
+:test1!test1@127.0.0.1 KICK #testchannel test2 :goodbye sorry bro
+list
+:ircserv.42.de 321 test1 Channel : Users Name
+:ircserv.42.de 322 test1 #testchannel 1
+:ircserv.42.de 323 test1 :End of LIST
+ls
+:ircserv.42.de 421 test1 LS :Unknown command
+list
+:ircserv.42.de 321 test1 Channel : Users Name
+:ircserv.42.de 322 test1 #testchannel 1
+:ircserv.42.de 323 test1 :End of LIST
+names
+:ircserv.42.de 353 test1 = #testchannel :@test1
+:ircserv.42.de 353 test1 = * :test1 test2 testuser
+:ircserv.42.de 366 test1 * :End of NAMES list

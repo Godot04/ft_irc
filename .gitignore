@@ -1,3 +1,4 @@
 objs/
 ft_irc_serv
 py_test.py
+.vscode/
