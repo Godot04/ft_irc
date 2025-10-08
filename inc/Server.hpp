@@ -10,6 +10,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <algorithm>
 
 class Client;
 class Channel;
@@ -31,13 +32,14 @@ public:
     void    start();
     void    handleNewConnection();
     void    handleClientMessage(int clientfd);
-    void    handleClientCommands(Client *client, const std::string &command, std::istringstream &iss);
+    void    handleClientCommands(Client *client, std::istringstream &iss);
     void    removeClient(int clientfd);
     void    registerClient(Client* client, std::istringstream& iss);
     void	processPassword(Client* client, std::istringstream& iss);
 	void	processNick(Client* client, std::istringstream& iss);
 	void	processUser(Client* client, std::istringstream& iss);
     void    processPrivmsg(Client* client, std::istringstream& iss);
+    void    processJoin(Client* client, std::istringstream& iss);
     void    handleCAP(Client* client, std::istringstream& iss);
     // Getters
     std::map<int, Client*>&              getClients();
