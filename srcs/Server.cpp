@@ -194,33 +194,35 @@ void Server::handleClientMessage(int clientfd)
     for (std::string message = client->getNextMessage(); !message.empty(); message = client->getNextMessage()) {
         std::istringstream iss(message);
         registerClient(client, iss);
+        if (client->isRegistered()) { 
+            handleClientCommands(client, iss);
+            if (client->isRegistered() &&
+                std::find(client->getChannels().begin(), client->getChannels().end(), "#general") == client->getChannels().end())
+            {
+                std::string defaultChannel = "#general";
+                Channel* channel;
+                if (_channels.find(defaultChannel) == _channels.end()) {
+                    channel = new Channel(defaultChannel);
+                    _channels[defaultChannel] = channel;
+                } else {
+                    channel = _channels[defaultChannel];
+                }
+                channel->addClient(client);
+                client->addChannel(defaultChannel);
+
+                // Send JOIN message to client and broadcast to channel
+                std::string join_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n";
+                client->sendMessage(join_msg);
+                channel->broadcast(join_msg, client);
+
+                // Send topic
+                client->sendMessage(":server 332 " + client->getNickname() + " " + defaultChannel + " :Welcome to the general channel\r\n");
+            }
+        }
     }
     client->clearBuffer();
     if (PRINT_CLIENT_INFO && client->isRegistered())
         client->printClientInfo();
-      handleClientCommands(client, iss);
-      if (client->isRegistered() &&
-          std::find(client->getChannels().begin(), client->getChannels().end(), "#general") == client->getChannels().end())
-      {
-          std::string defaultChannel = "#general";
-          Channel* channel;
-          if (_channels.find(defaultChannel) == _channels.end()) {
-              channel = new Channel(defaultChannel);
-              _channels[defaultChannel] = channel;
-          } else {
-              channel = _channels[defaultChannel];
-          }
-          channel->addClient(client);
-          client->addChannel(defaultChannel);
-
-          // Send JOIN message to client and broadcast to channel
-          std::string join_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n";
-          client->sendMessage(join_msg);
-          channel->broadcast(join_msg, client);
-
-          // Send topic
-          client->sendMessage(":server 332 " + client->getNickname() + " " + defaultChannel + " :Welcome to the general channel\r\n");
-      }
 }
 
 void Server::registerClient(Client* client, std::istringstream& iss) {
@@ -244,6 +246,76 @@ void Server::registerClient(Client* client, std::istringstream& iss) {
         client->isUsernameSet() && !client->isCAPNegotiation())
     {
         client->setRegistered(true);
+    }
+}
+
+void Server::handleClientCommands(Client *client, std::istringstream &iss)
+{
+    std::string command;
+    iss >> command;
+    if (command == "PRIVMSG")
+        processPrivmsg(client, iss);
+    // else if (command == "JOIN")
+    //     processJoin(client, iss);
+    else
+        client->sendMessage("server 421: Unknown command from user: " + client->getNickname() + " (" + command + ")\r\n");
+}
+
+// void Server::processJoin(Client *client, std::istringstream &iss)
+// {
+    
+// }
+
+void    Server::processPrivmsg(Client *client, std::istringstream &iss)
+{
+    std::string target;
+    iss >> target; // extract channel or nickname
+    std::string message;
+    std::getline(iss, message);
+    if (target.empty() || message.empty())
+    {
+        client->sendMessage("server 461: " + client->getNickname() + " sent not enough parameters (PRIVMSG)\r\n");
+        return ;
+    }
+    std::cout << "PRIVMSG from " << client->getNickname() << " to " << target << ": " << message << std::endl;
+    if (target[0] == '#')
+    {
+        if (_channels.find(target) == _channels.end())
+        {
+            client->sendMessage("server 403: " + client->getNickname() + " sent message to " + target + " :No such channel exist\r\n");
+            return ;
+        }
+        Channel *channel = _channels[target];
+        if (!channel->isClientInChannel(client))
+        {
+            client->sendMessage("server 404: " + client->getNickname() + " doesn't have acces to this channel - " + target);
+            return ;
+        }
+        std::string formatted_msg = client->getNickname() + "!" + client->getUsername() + "@"
+                                    + client->getHostname() + " sent message to channel " + target + " :"
+                                    + message + "\r\n";
+        channel->broadcast(formatted_msg, client);
+    }
+    else
+    {
+        Client *target_user = NULL;
+        for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
+        {
+            if (it->second->getNickname().compare(target) == 0)
+            {
+                target_user = it->second;
+                break;
+            }
+        }
+        if (target_user == NULL)
+        {
+            client->sendMessage("server 401: " + target + " doesn't exist (sent by " + client->getNickname() + ")" );
+            return ;
+        }
+         std::string formatted_msg = client->getNickname() + "!" + client->getUsername() + "@"
+                                    + client->getHostname() + " sent message to user " + target + " :"
+                                    + message + "\r\n";
+        target_user->sendMessage(formatted_msg);
     }
 }
 
