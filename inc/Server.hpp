@@ -11,6 +11,8 @@
 #include <fcntl.h>
 #include <poll.h>
 
+# define PRINT_CLIENT_INFO 1
+
 class Client;
 class Channel;
 
