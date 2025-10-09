@@ -13,8 +13,8 @@ Server::Server(int port, const std::string& password)
         throw std::runtime_error("Failed to create socket");
     // Set socket options
 	// SOL_SOCKET to manipulate options at the sockets API level
-	// SO_REUSEADDR to allow reuse of local addresses address:port. 
-    // When a socket is closed, that address:port pair is put into a TIME_WAIT state, 
+	// SO_REUSEADDR to allow reuse of local addresses address:port.
+    // When a socket is closed, that address:port pair is put into a TIME_WAIT state,
     // typically for a few minutes. During this time, the address:port pair cannot be reused.
     // Setting this option allows a socket to forcibly bind to a port in use by a socket in TIME_WAIT state.
 	// opt = 1 to enable the option
@@ -27,11 +27,11 @@ Server::Server(int port, const std::string& password)
         close(_socket);
         throw std::runtime_error("Failed to set socket options");
     }
-    
+
     // Set non-blocking mode
     // F_SETFL tells fcntl to set the file status flags to the value given by the third argument.
-    // O_NONBLOCK is a flag that makes I/O on the descriptor non‑blocking: calls like accept(), 
-    // recv(), send() return immediately. If no data/connection is available they return -1 
+    // O_NONBLOCK is a flag that makes I/O on the descriptor non‑blocking: calls like accept(),
+    // recv(), send() return immediately. If no data/connection is available they return -1
     // and set errno to EAGAIN or EWOULDBLOCK instead of waiting.
     if (fcntl(_socket, F_SETFL, O_NONBLOCK) < 0)
     {
@@ -53,22 +53,22 @@ Server::Server(int port, const std::string& password)
     }
 
     // Listen for connections
-    // listen(fd, backlog) marks a previously created and bound TCP socket as passive: 
-    // the kernel will start accepting incoming TCP connection attempts on that socket 
+    // listen(fd, backlog) marks a previously created and bound TCP socket as passive:
+    // the kernel will start accepting incoming TCP connection attempts on that socket
     // and queue them until your program calls accept().
     if (listen(_socket, 10) < 0)
     {
         close(_socket);
         throw std::runtime_error("Failed to listen on socket");
     }
-    
+
     // Add server socket to pollfds
     pollfd pfd;
     pfd.fd = _socket;
     pfd.events = POLLIN;
     pfd.revents = 0;
     _pollfds.push_back(pfd);
-    
+
     std::cout << "Server initialized on port " << _port << std::endl;
 }
 
@@ -80,11 +80,11 @@ Server::~Server()
         close(it->first);
         delete it->second;
     }
-    
+
     // Delete all channels
     for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
         delete it->second;
-    
+
     // Close server socket
     close(_socket);
     std::cout << "Server shut down" << std::endl;
@@ -93,7 +93,7 @@ Server::~Server()
 void Server::start()
 {
     std::cout << "Server started. Waiting for connections..." << std::endl;
-    
+
     while (true)
     {
         if (poll(&_pollfds[0], _pollfds.size(), -1) < 0)
@@ -141,7 +141,7 @@ void Server::handleNewConnection()
         std::cerr << "Failed to accept connection: " << strerror(errno) << std::endl;
         return;
     }
-    
+
     // Set non-blocking mode
     if (fcntl(client_fd, F_SETFL, O_NONBLOCK) < 0)
     {
@@ -160,6 +160,7 @@ void Server::handleNewConnection()
     // Create client
     Client *client = new Client(client_fd);
     _clients[client_fd] = client;
+    // _clients[client_fd] = new Client(client_fd);
 
     // Set hostname
     // inet_ntoa(client_addr.sin_addr) converts the IPv4 address in
@@ -171,6 +172,7 @@ void Server::handleNewConnection()
     Reply::welcome(*client);
 }
 
+// bla-bla
 void Server::handleClientMessage(int clientfd)
 {
     // Recieve message 
@@ -196,6 +198,29 @@ void Server::handleClientMessage(int clientfd)
     client->clearBuffer();
     if (PRINT_CLIENT_INFO && client->isRegistered())
         client->printClientInfo();
+      handleClientCommands(client, iss);
+      if (client->isRegistered() &&
+          std::find(client->getChannels().begin(), client->getChannels().end(), "#general") == client->getChannels().end())
+      {
+          std::string defaultChannel = "#general";
+          Channel* channel;
+          if (_channels.find(defaultChannel) == _channels.end()) {
+              channel = new Channel(defaultChannel);
+              _channels[defaultChannel] = channel;
+          } else {
+              channel = _channels[defaultChannel];
+          }
+          channel->addClient(client);
+          client->addChannel(defaultChannel);
+
+          // Send JOIN message to client and broadcast to channel
+          std::string join_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n";
+          client->sendMessage(join_msg);
+          channel->broadcast(join_msg, client);
+
+          // Send topic
+          client->sendMessage(":server 332 " + client->getNickname() + " " + defaultChannel + " :Welcome to the general channel\r\n");
+      }
 }
 
 void Server::registerClient(Client* client, std::istringstream& iss) {
@@ -305,9 +330,7 @@ void Server::removeClient(int clientfd)
 {
     if (_clients.find(clientfd) == _clients.end())
         return;
-    
     Client *client = _clients[clientfd];
-    
     // Remove from channels
     for (std::vector<std::string>::iterator it = client->getChannels().begin(); it != client->getChannels().end(); ++it)
     {
@@ -315,7 +338,6 @@ void Server::removeClient(int clientfd)
         if (channel)
             channel->removeClient(client);
     }
-    
     // Remove from pollfds
     for (std::vector<pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it)
     {
