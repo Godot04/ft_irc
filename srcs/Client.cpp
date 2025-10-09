@@ -16,7 +16,7 @@ void Client::addToBuffer(const std::string& msg)
 
 bool Client::hasCompleteMessage() const
 {
-    return _buffer.find("\\r\\n") != std::string::npos;
+    return _buffer.find("\r\n") != std::string::npos;
 }
 
 std::string Client::getNextMessage()

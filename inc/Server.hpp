@@ -12,6 +12,8 @@
 #include <poll.h>
 #include <algorithm>
 
+# define PRINT_CLIENT_INFO 1
+
 class Client;
 class Channel;
 
