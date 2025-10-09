@@ -194,7 +194,8 @@ void Server::handleClientMessage(int clientfd)
     // Process complete messages
     std::string message = client->getNextMessage();
     std::cout << "message: " << message << std::endl;
-    while (!message.empty()) {
+    while (!message.empty())
+    {
         std::cout << "Segment: " << message << std::endl;
         std::istringstream iss(message);
         if (!client->isRegistered()) {
@@ -207,22 +208,22 @@ void Server::handleClientMessage(int clientfd)
         {
             std::string defaultChannel = "#general";
             Channel* channel;
-            if (_channels.find(defaultChannel) == _channels.end()) {
+            if (_channels.find(defaultChannel) == _channels.end())
+            {
                 channel = new Channel(defaultChannel);
                 _channels[defaultChannel] = channel;
-            } else {
-                channel = _channels[defaultChannel];
+                channel->addOperator(client);
+                channel->setTopic("Simple channel for all users\r\n");
             }
+            else
+                channel = _channels[defaultChannel];
             channel->addClient(client);
             client->addChannel(defaultChannel);
-
             // Send JOIN message to client and broadcast to channel
             std::string join_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n";
             client->sendMessage(join_msg);
             channel->broadcast(join_msg, client);
-
-            // Send topic
-            client->sendMessage(":server 332 " + client->getNickname() + " " + defaultChannel + " :Welcome to the general channel\r\n");
+            client->sendMessage(channel->getTopic());
         }
         message = client->getNextMessage();
     }
@@ -297,13 +298,129 @@ void Server::handleClientCommands(Client *client, std::istringstream &iss)
         processPrivmsg(client, iss);
     else if (command == "JOIN")
         processJoin(client, iss);
+    // else if (command == "INVITE")
+    //     processInvite(client, iss);
+    else if (command == "TOPIC")
+        processTopic(client, iss);
     else
         client->sendMessage("server 421: Unknown command from user: " + client->getNickname() + " (" + command + ")\r\n");
 }
 
+void Server::processTopic(Client *client, std::istringstream &iss)
+{
+    std::string target;
+    iss >> target; // extract channel name
+    if (target.empty())
+    {
+        client->sendMessage("server 461: sent not enough parameters for TOPIC\r\n");
+        return ;
+    }
+    if (target[0] != '#' || target.length() < 2)
+    {
+        client->sendMessage("server 403: sent invalid characters for channel name to TOPIC\r\n");
+        return ;
+    }
+    Channel *channel;
+    if (_channels.find(target) == _channels.end())
+    {
+        client->sendMessage("This channel doesn't exist!\r\n");
+        return ;
+    }
+    channel = _channels[target];
+    if (!channel->isClientInChannel(client))
+    {
+        client->sendMessage("You don't have access to this channel!\r\n");
+        return ;
+    }
+    std::string new_topic;
+    std::getline(iss, new_topic);
+    while (!new_topic.empty() && isspace(new_topic[0]))
+        new_topic = new_topic.substr(1);
+    if (new_topic.empty())
+    {
+        if (!channel->getTopic().empty())
+            client->sendMessage(channel->getTopic());
+        else
+            client->sendMessage("Topic of this channel is not set yet\r\n");
+        return ;
+    }
+    if (!channel->isOperator(client))
+    {
+        client->sendMessage("You don't have operator rights to change the topic\r\n");
+        return ;
+    }
+    channel->setTopic(new_topic);
+    std::string formatted_msg = client->getNickname() + "!" + client->getUsername() + "@"
+                                    + client->getHostname() + " set new topic for channel " + target + " :"
+                                    + new_topic + "\r\n";
+    channel->broadcast(formatted_msg, client);
+}
+
+void Server::processInvite(Client *client, std::istringstream &iss)
+{
+    std::string target;
+    iss >> target; // extract user
+     if (target.empty())
+    {
+        client->sendMessage("server 461: sent not enough parameters for INVITE\r\n");
+        return ;
+    }
+}
+
 void Server::processJoin(Client *client, std::istringstream &iss)
 {
-    
+    bool the_first_one = false;
+    std::string target;
+    iss >> target; // extract channel name
+    if (target.empty())
+    {
+        client->sendMessage("server 461: sent not enough parameters for JOIN\r\n");
+        return ;
+    }
+    if (target[0] != '#' || target.length() < 2)
+    {
+        client->sendMessage("server 403: sent invalid characters for channel name to JOIN\r\n");
+        return ;
+    }
+    Channel *channel;
+    if (_channels.find(target) == _channels.end())
+    {
+        channel = new Channel(target);
+        _channels[target] = channel;
+        the_first_one = true;
+        std::cout << "New channel was created: " << target << " by user " << client->getNickname() << std::endl;
+    }
+    else
+        channel = _channels[target];
+    if (channel->isClientInChannel(client))
+    {
+        client->sendMessage("You're already in this channel\r\n");
+        return ;
+    }
+    if (the_first_one)
+        channel->addOperator(client);
+    else
+        channel->addClient(client);
+    client->addChannel(target);
+    std::string formatted_msg = client->getNickname() + "!" + client->getUsername() + "@"
+                                    + client->getHostname() + " JOIN " + target + "\r\n";
+    client->sendMessage("Welcome to " + target + " channel!\r\n");
+    channel->broadcast(formatted_msg, client);
+    if (!channel->getTopic().empty())
+        client->sendMessage(channel->getTopic());
+    else
+        client->sendMessage("Topic of this channel is not set yet\r\n");
+    // Send name list (wrote by bot and need for debug)
+    std::string names = ":server 353 " + client->getNickname() + " = " + target + " :";
+    const std::vector<Client*>& clients = channel->getClients();
+    for (size_t i = 0; i < clients.size(); ++i)
+    {
+        names += clients[i]->getNickname();
+        if (i < clients.size() - 1)
+            names += " ";
+    }
+    client->sendMessage(names + "\r\n");
+    client->sendMessage(":server 366 " + client->getNickname() + " " + target + " :End of NAMES list\r\n");
 }
 
 void    Server::processPrivmsg(Client *client, std::istringstream &iss)
@@ -352,7 +469,7 @@ void    Server::processPrivmsg(Client *client, std::istringstream &iss)
             client->sendMessage("server 401: " + target + " doesn't exist (sent by " + client->getNickname() + ")" );
             return ;
         }
-         std::string formatted_msg = client->getNickname() + "!" + client->getUsername() + "@"
+        std::string formatted_msg = client->getNickname() + "!" + client->getUsername() + "@"
                                     + client->getHostname() + " sent message to user " + target + " :"
                                     + message + "\r\n";
         target_user->sendMessage(formatted_msg);
