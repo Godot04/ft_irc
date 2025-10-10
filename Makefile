@@ -1,7 +1,7 @@
 NAME = ft_irc_serv
 
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
+CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -g
 
 SRC_DIR = srcs/
 OBJ_DIR = objs/
@@ -13,6 +13,7 @@ SRCS = main.cpp \
        Channel.cpp \
        Command.cpp \
 	   Reply.cpp \
+	   Server_Commands.cpp \
 
 OBJS = $(addprefix $(OBJ_DIR), $(SRCS:.cpp=.o))
 
@@ -35,6 +36,12 @@ clean:
 fclean: clean
 	rm -f $(NAME)
 	@echo "Executable removed"
+
+set_google_test:
+	git submodule update --init --recursive
+
+test_clean:
+	rm -rf googletests
 
 re: fclean all
 

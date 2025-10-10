@@ -192,6 +192,7 @@ void Server::handleClientMessage(int clientfd)
     {
         return ; // Wait for more data
     }
+    std::cout << "[Server] Received message: " << client->getBuffer() << " client status: " << (client->isRegistered() ? "Registered" : "Not Registered") << std::endl;
     for (std::string message = client->getNextMessage(); !message.empty(); message = client->getNextMessage())
     {
         std::istringstream iss(message);
@@ -199,31 +200,36 @@ void Server::handleClientMessage(int clientfd)
         if (client->isRegistered())
         {
             std::istringstream cmdIss(message);  // reset to start
-            handleClientCommands(client, cmdIss);
-            if (client->isRegistered() &&
-                std::find(client->getChannels().begin(), client->getChannels().end(), "#general") == client->getChannels().end())
-            {
-                bool the_first_one = false;
-                std::string defaultChannel = "#general";
-                Channel* channel;
-                if (_channels.find(defaultChannel) == _channels.end())
+            if (handleOperatorCommand(client, cmdIss))
+                continue;
+            if (handleClientCommands(client, cmdIss)) {
+                if (client->isRegistered() &&
+                    std::find(client->getChannels().begin(), client->getChannels().end(), "#general") == client->getChannels().end())
                 {
-                    channel = new Channel(defaultChannel);
-                    _channels[defaultChannel] = channel;
-                    the_first_one = true;
-                    channel->setTopic("Channel for old fellows\r\n");
+                    bool the_first_one = false;
+                    std::string defaultChannel = "#general";
+                    Channel* channel;
+                    if (_channels.find(defaultChannel) == _channels.end())
+                    {
+                        channel = new Channel(defaultChannel);
+                        _channels[defaultChannel] = channel;
+                        the_first_one = true;
+                        channel->setTopic("Channel for old fellows\r\n");
+                    }
+                    else
+                        channel = _channels[defaultChannel];
+                    if (the_first_one)
+                        channel->addOperator(client);
+                    else
+                        channel->addClient(client);
+                    client->addChannel(defaultChannel);
+                    std::string join_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n";
+                    client->sendMessage(join_msg);
+                    channel->broadcast(join_msg, client);
+                    client->sendMessage(channel->getTopic() + "\r\n");
                 }
-                else
-                    channel = _channels[defaultChannel];
-                if (the_first_one)
-                    channel->addOperator(client);
-                else
-                    channel->addClient(client);
-                client->addChannel(defaultChannel);
-                std::string join_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n";
-                client->sendMessage(join_msg);
-                channel->broadcast(join_msg, client);
-                client->sendMessage(channel->getTopic() + "\r\n");
+                std::istringstream cmdIss(message);  // reset to start
+                // else if () // other commands for operators
             }
         }
     }
@@ -249,27 +255,27 @@ void Server::registerClient(Client* client, std::istringstream& iss) {
         processUser(client, iss);
     else if (!client->isRegistered())
         Reply::unknownCommand(*client, command);
-    if (!client->isRegistered() && client->isAuthenticated() && client->isNicknameSet() &&
-        client->isUsernameSet() && !client->isCAPNegotiation())
+    if (!client->isRegistered() && client->isAuthenticated() && client->isNicknameSet() && client->isUsernameSet() && !client->isCAPNegotiation())
     {
         client->setRegistered(true);
     }
 }
 
-void Server::handleClientCommands(Client *client, std::istringstream &iss)
+bool Server::handleClientCommands(Client *client, std::istringstream &iss)
 {
     std::string command;
     iss >> command;
     if (command == "PRIVMSG")
-        processPrivmsg(client, iss);
+        return (processPrivmsg(client, iss), true);
     else if (command == "JOIN")
-        processJoin(client, iss);
+        return (processJoin(client, iss), true);
     // else if (command == "INVITE")
     //     processInvite(client, iss);
     else if (command == "TOPIC")
-        processTopic(client, iss);
-    else
-        client->sendMessage("server 421: Unknown command from user: " + client->getNickname() + " (" + command + ")\r\n");
+        return (processTopic(client, iss), true);
+    // else
+    //     client->sendMessage("server 421: Unknown command from user: " + client->getNickname() + " (" + command + ")\r\n");
+    return false;
 }
 
 void Server::processTopic(Client *client, std::istringstream &iss)
@@ -517,8 +523,8 @@ void Server::processUser(Client* client, std::istringstream& iss) {
     }
     client->setUsername(username);
     client->setRealname(realname);
-    if (!client->getNickname().empty())
-        client->setRegistered(true);
+    // if (!client->getNickname().empty())
+    //     client->setRegistered(true);
 }
 
 void Server::removeClient(int clientfd)
@@ -529,9 +535,9 @@ void Server::removeClient(int clientfd)
     // Remove from channels
     for (std::vector<std::string>::iterator it = client->getChannels().begin(); it != client->getChannels().end(); ++it)
     {
-        Channel *channel = _channels[*it];
-        if (channel)
-            channel->removeClient(client);
+        std::map<std::string, Channel*>::iterator chIt = _channels.find(*it);
+        if (chIt != _channels.end() && chIt->second)
+            chIt->second->removeClient(client);
     }
     // Remove from pollfds
     for (std::vector<pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it)

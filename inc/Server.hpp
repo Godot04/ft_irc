@@ -34,7 +34,7 @@ public:
     void    start();
     void    handleNewConnection();
     void    handleClientMessage(int clientfd);
-    void    handleClientCommands(Client *client, std::istringstream &iss);
+    bool    handleClientCommands(Client *client, std::istringstream &iss);
     void    removeClient(int clientfd);
     void    registerClient(Client* client, std::istringstream& iss);
     void	processPassword(Client* client, std::istringstream& iss);
@@ -45,6 +45,8 @@ public:
     void    processInvite(Client* client, std::istringstream& iss);
     void    processTopic(Client* client, std::istringstream& iss);
     void    handleCAP(Client* client, std::istringstream& iss);
+    bool    handleOperatorCommand(Client* client, std::istringstream& iss);
+    bool    processKick(Client* client, std::istringstream& iss);
     // Getters
     std::map<int, Client*>&              getClients();
     std::map<std::string, Channel*>&     getChannels();

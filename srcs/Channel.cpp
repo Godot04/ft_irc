@@ -130,3 +130,36 @@ std::vector<Client*>& Channel::getOperators()
 {
     return _operators;
 }
+
+bool Channel::isClientInChannel(const std::string& client) const
+{
+    for (std::vector<Client*>::const_iterator it = _clients.begin(); it != _clients.end(); ++it)
+    {
+        if ((*it)->getNickname() == client)
+            return true;
+    }
+    return false;
+}
+
+void Channel::removeClient(const std::string& client)
+{
+    for (std::vector<Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
+    {
+        if ((*it)->getNickname() == client)
+        {
+            Client* cl = *it;
+            _clients.erase(it);
+            // Also remove from operators if present
+            removeOperator(cl);
+            // Remove channel from client's channel list
+            for (std::vector<std::string>::iterator it2 = cl->getChannels().begin(); it2 != cl->getChannels().end(); ++it2)
+            {
+                if (*it2 == _name)
+                {
+                    cl->getChannels().erase(it2);
+                    break;
+                }
+            }
+        }
+    }
+}

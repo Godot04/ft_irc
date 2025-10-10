@@ -21,10 +21,12 @@ public:
 
     void                addClient(Client* client);
     void                removeClient(Client* client);
+    void                removeClient(const std::string& client);
     void                addOperator(Client* client);
     void                removeOperator(Client* client);
     void                broadcast(const std::string& message, Client* sender = NULL);
     bool                isClientInChannel(Client* client) const;
+    bool                isClientInChannel(const std::string& client) const;
     bool                isOperator(Client* client) const;
 
     // Getters & Setters
