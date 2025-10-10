@@ -6,7 +6,7 @@
 #include "../inc/Reply.hpp"
 
 Command::Command(Server* server, Client* client, const std::string& command, std::istringstream& iss)
-    : _server(server), _client(client), _command(command), _iss(iss)
+    : _server(server), _client(client), _command(command), _iss(iss), _channels(_server->getChannels())
 {
 }
 
@@ -16,7 +16,6 @@ Command::~Command()
 
 void Command::executeCommands()
 {
-    std::cout << "executeCommands (iss2): " << _command << std::endl;
     if (_command == "PRIVMSG")
         processPrivmsg();
     else if (_command == "JOIN")
@@ -26,7 +25,7 @@ void Command::executeCommands()
     else if (_command == "TOPIC")
         processTopic();
     else
-        _client->sendMessage("server 421: Unknown command from user: " + _client->getNickname() + " (" + _command + ")\r\n");
+        Reply::unknownCommand(*_client, _command);
 }
 
 void Command::processTopic()
@@ -43,14 +42,13 @@ void Command::processTopic()
         _client->sendMessage("server 403: sent invalid characters for channel name to TOPIC\r\n");
         return ;
     }
-    std::map<std::string, Channel*>& channels = _server->getChannels();
     Channel* channel;
-    if (channels.find(target) == channels.end())
+    if (_channels.find(target) == _channels.end())
     {
         _client->sendMessage("This channel doesn't exist!\r\n");
         return ;
     }
-    channel = channels[target];
+    channel = _channels[target];
     if (!channel->isClientInChannel(_client))
     {
         _client->sendMessage("You don't have access to this channel!\r\n");
@@ -106,17 +104,16 @@ void Command::processJoin()
         _client->sendMessage("server 403: sent invalid characters for channel name to JOIN\r\n");
         return ;
     }
-    std::map<std::string, Channel*>& channels = _server->getChannels();
     Channel *channel;
-    if (channels.find(target) == channels.end())
+    if (_channels.find(target) == _channels.end())
     {
         channel = new Channel(target);
-        channels[target] = channel;
+        _channels[target] = channel;
         the_first_one = true;
         std::cout << "New channel was created: " << target << " by user " << _client->getNickname() << std::endl;
     }
     else
-        channel = channels[target];
+        channel = _channels[target];
     if (channel->isClientInChannel(_client))
     {
         _client->sendMessage("You're already in this channel\r\n");
@@ -162,13 +159,12 @@ void    Command::processPrivmsg()
     std::cout << "PRIVMSG from " << _client->getNickname() << " to " << target << ": " << message << std::endl;
     if (target[0] == '#')
     {
-        std::map<std::string, Channel*>& channels = _server->getChannels();
-        if (channels.find(target) == channels.end())
+        if (_channels.find(target) == _channels.end())
         {
             _client->sendMessage("server 403: " + _client->getNickname() + " sent message to " + target + " :No such channel exist\r\n");
             return ;
         }
-        Channel *channel = channels[target];
+        Channel *channel = _channels[target];
         if (!channel->isClientInChannel(_client))
         {
             _client->sendMessage("server 404: " + _client->getNickname() + " doesn't have acces to this channel - " + target);

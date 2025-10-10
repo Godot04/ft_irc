@@ -12,15 +12,22 @@ class Client;
 class Command
 {
     private:
-        Server*            _server;
-        Client*            _client;
-        std::string        _command;
-        std::istringstream& _iss;
+        Server*                          _server;
+        Client*                          _client;
+        std::string                      _command;
+        std::istringstream&              _iss;
+        std::map<std::string, Channel*>& _channels;
 
     public:
         Command(Server* server, Client* client, const std::string& command, std::istringstream& iss);
         ~Command();
         void    executeCommands();
+        // Registration Commands
+        void processPassword();
+        void processNick();
+        void processUser();
+        void processCAP();
+        // Commands for registered users
         void    processPrivmsg();
         void    processJoin();
         void    processInvite();
