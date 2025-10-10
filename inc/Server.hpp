@@ -42,6 +42,8 @@ public:
 	void	processUser(Client* client, std::istringstream& iss);
     void    processPrivmsg(Client* client, std::istringstream& iss);
     void    processJoin(Client* client, std::istringstream& iss);
+    void    processInvite(Client* client, std::istringstream& iss);
+    void    processTopic(Client* client, std::istringstream& iss);
     void    handleCAP(Client* client, std::istringstream& iss);
     // Getters
     std::map<int, Client*>&              getClients();
