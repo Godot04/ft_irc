@@ -22,10 +22,156 @@ void Command::executeCommands()
         processJoin();
     // else if (command == "INVITE")
     //     processInvite(client, iss);
+    else if (_command == "KICK")
+        processKick();
     else if (_command == "TOPIC")
         processTopic();
+    else if (_command == "LIST")
+        processList();
     else
         Reply::unknownCommand(*_client, _command);
+}
+
+// void Server::processInvite(Client *client, std::istringstream &iss)
+// {
+//     std::string target;
+//     iss >> target; // extract user
+//      if (target.empty())
+//     {
+//         client->sendMessage("server 461: sent not enough parameters for INVITE\r\n");
+//         return ;
+//     }
+// }
+
+void Command::processList()
+{
+    std::map<int, Client*>& clients = _server->getClients();
+    int counter = 1;
+
+    // Header
+    _client->sendMessage("---- User List ----\r\n");
+
+    for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); ++it)
+    {
+        Client* user = it->second;
+
+        // Convert counter to string using stringstream (C++98 compatible)
+        std::stringstream ss;
+        ss << counter;
+
+        std::string output = ss.str() + ". " + user->getNickname() +
+                            " (" + user->getUsername() + "): ";
+
+        // Get channels and operator status
+        const std::vector<std::string>& userChannels = user->getChannels();
+        bool firstChannel = true;
+
+        if (userChannels.empty())
+        {
+            output += "no channels";
+        }
+        else
+        {
+            for (std::vector<std::string>::const_iterator chan = userChannels.begin();
+                 chan != userChannels.end(); ++chan)
+            {
+                if (!firstChannel)
+                    output += ", ";
+                else
+                    firstChannel = false;
+
+                // Check if user is operator in this channel
+                Channel* channel = _channels[*chan];
+                if (channel && channel->isOperator(user))
+                    output += *chan + " (op)";
+                else
+                    output += *chan;
+            }
+        }
+
+        _client->sendMessage(output + "\r\n");
+        counter++;
+    }
+
+    _client->sendMessage("---- End of List ----\r\n");
+}
+
+void Command::processKick()
+{
+    std::string target_channel;
+    _iss >> target_channel;
+    if (target_channel.empty())
+    {
+        _client->sendMessage("server 461: sent not enough parameters for KICK\r\n");
+        return ;
+    }
+    if (target_channel[0] == '#' || target_channel[0] == '&')
+    {
+        if (_channels.find(target_channel) == _channels.end())
+        {
+            _client->sendMessage("server 403: This channel doesn't exist!\r\n");
+            return ;
+        }
+        Channel *channel = _channels[target_channel];
+        if (!channel->isClientInChannel(_client))
+        {
+            _client->sendMessage("server 442: You don't have access to this channel!\r\n");
+            return ;
+        }
+        if (!channel->isOperator(_client))
+        {
+            _client->sendMessage("server 482: You don't have operator rights to kick client\r\n");
+            return ;
+        }
+        std::string target_nick;
+        _iss >> target_nick;
+        if (target_nick.empty())
+        {
+            _client->sendMessage("server 461: sent not enough parameters for KICK (user)\r\n");
+            return ;
+        }
+        Client *target_user = NULL;
+        std::map<int, Client*>& clients = _server->getClients();
+        for (std::map<int, Client*>::iterator it = clients.begin(); it != clients.end(); it++)
+        {
+            if (it->second->getNickname() == target_nick)
+            {
+                target_user = it->second;
+                break;
+            }
+        }
+        if (target_user == NULL)
+        {
+            _client->sendMessage("server 401: No sush nick is exist\r\n");
+            return ;
+        }
+        if (!channel->isClientInChannel(target_user))
+        {
+            _client->sendMessage("server 441: User doesn't have acces to this channel\r\n");
+            return ;
+        }
+        channel->removeClient(target_user);
+        target_user->removeChannel(target_channel);
+        std::string kick_message;
+        std::getline(_iss, kick_message);
+        while (!kick_message.empty() && isspace(kick_message[0]))
+            kick_message = kick_message.substr(1);
+        if (!kick_message.empty() && kick_message[0] == ':')
+            kick_message = kick_message.substr(1);
+        if (kick_message.empty())
+            kick_message = "No specific reason";
+        std::string formatted_msg = "User " + target_nick + " was kicked from " + target_channel
+                                        + " by " + _client->getNickname()
+                                        + " (" + kick_message + ") " + "\r\n";
+        channel->broadcast(formatted_msg);
+        target_user->sendMessage("You were kicked from this server: " + target_channel
+                                    + " for this reason: " + kick_message + "\r\n");
+    }
+    else
+    {
+        _client->sendMessage("Input must follow irc protocol (#channel or &channel)\r\n");
+        return ;
+    }
 }
 
 void Command::processTopic()
@@ -77,17 +223,6 @@ void Command::processTopic()
                                     + new_topic + "\r\n";
     channel->broadcast(formatted_msg, _client);
 }
-
-// void Server::processInvite(Client *client, std::istringstream &iss)
-// {
-//     std::string target;
-//     iss >> target; // extract user
-//      if (target.empty())
-//     {
-//         client->sendMessage("server 461: sent not enough parameters for INVITE\r\n");
-//         return ;
-//     }
-// }
 
 void Command::processJoin()
 {

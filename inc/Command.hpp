@@ -32,6 +32,8 @@ class Command
         void    processJoin();
         void    processInvite();
         void    processTopic();
+        void    processKick();
+        void    processList();
 };
 
 #endif
