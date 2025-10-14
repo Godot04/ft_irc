@@ -1,6 +1,6 @@
 #include "../inc/ft_irc.hpp"
 
-Client::Client(int fd) 
+Client::Client(int fd)
     : _fd(fd), _authenticated(false), _registered(false), _isCAPNegotiation(false)
 {
 }
@@ -24,7 +24,7 @@ std::string Client::getNextMessage()
     size_t pos = _buffer.find("\r\n");
     if (pos == std::string::npos)
         return "";
-    
+
     std::string message = _buffer.substr(0, pos);
     _buffer = _buffer.substr(pos + 2);
     return message;
@@ -123,6 +123,13 @@ void Client::addChannel(const std::string& channel)
             return; // Channel already in list
     }
     _channels.push_back(channel);
+}
+
+void Client::removeChannel(const std::string& channel)
+{
+    std::vector <std::string>::iterator it = std::find(_channels.begin(), _channels.end(), channel);
+    if (it != _channels.end())
+        _channels.erase(it);
 }
 
 std::string const & Client::getBuffer() const

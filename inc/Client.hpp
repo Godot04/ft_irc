@@ -29,6 +29,7 @@ public:
 	void				printBuffer() const;
     void                sendMessage(const std::string& msg) const;
     void				addChannel(const std::string& channel);
+    void                removeChannel(const std::string& channel);
     // Getters & Setters
     int                 getFd() const;
     const std::string&  getNickname() const;
