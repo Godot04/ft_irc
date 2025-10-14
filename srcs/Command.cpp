@@ -154,10 +154,7 @@ void Command::processKick()
         target_user->removeChannel(target_channel);
         std::string kick_message;
         std::getline(_iss, kick_message);
-        while (!kick_message.empty() && isspace(kick_message[0]))
-            kick_message = kick_message.substr(1);
-        if (!kick_message.empty() && kick_message[0] == ':')
-            kick_message = kick_message.substr(1);
+        clear_space(kick_message);
         if (kick_message.empty())
             kick_message = "No specific reason";
         std::string formatted_msg = "User " + target_nick + " was kicked from " + target_channel
@@ -202,8 +199,7 @@ void Command::processTopic()
     }
     std::string new_topic;
     std::getline(_iss, new_topic);
-    while (!new_topic.empty() && isspace(new_topic[0]))
-        new_topic = new_topic.substr(1);
+    clear_space(new_topic);
     if (new_topic.empty())
     {
         if (!channel->getTopic().empty())
@@ -226,58 +222,59 @@ void Command::processTopic()
 
 void Command::processJoin()
 {
-    bool the_first_one = false;
-    std::string target;
-    _iss >> target; // extract channel name
-    if (target.empty())
+    std::string channels;
+    _iss >> channels;
+    if (channels.empty())
     {
         _client->sendMessage("server 461: sent not enough parameters for JOIN\r\n");
         return ;
     }
-    if (target[0] != '#' || target.length() < 2)
+    size_t start = 0;
+    size_t end = channels.find(',');
+    while (start < channels.length())
     {
-        _client->sendMessage("server 403: sent invalid characters for channel name to JOIN\r\n");
-        return ;
-    }
-    Channel *channel;
-    if (_channels.find(target) == _channels.end())
-    {
-        channel = new Channel(target);
-        _channels[target] = channel;
-        the_first_one = true;
-        std::cout << "New channel was created: " << target << " by user " << _client->getNickname() << std::endl;
-    }
-    else
-        channel = _channels[target];
-    if (channel->isClientInChannel(_client))
-    {
-        _client->sendMessage("You're already in this channel\r\n");
-        return ;
-    }
-    if (the_first_one)
-        channel->addOperator(_client);
-    else
-        channel->addClient(_client);
-    _client->addChannel(target);
-    std::string formatted_msg = _client->getNickname() + "!" + _client->getUsername() + "@"
+        std::string target;
+        if (end == std::string::npos)
+            target = channels.substr(start);
+        else
+            target = channels.substr(start, end - start);
+        if ((target[0] != '#' && target[0] != '&') || target.length() < 2)
+        {
+            _client->sendMessage("server 403: sent invalid characters for channel name to JOIN\r\n");
+            continue_loop_Join(start, end, channels);
+            continue;
+        }
+        bool the_first_one = false;
+        Channel *channel;
+        if (_channels.find(target) == _channels.end())
+        {
+            channel = new Channel(target);
+            _channels[target] = channel;
+            the_first_one = true;
+        }
+        else
+            channel = _channels[target];
+        if (channel->isClientInChannel(_client))
+        {
+            _client->sendMessage("You're already in this channel\r\n");
+            continue_loop_Join(start, end, channels);
+            continue;
+        }
+        if (the_first_one)
+            channel->addOperator(_client);
+        else
+            channel->addClient(_client);
+        _client->addChannel(target);
+        std::string formatted_msg = _client->getNickname() + "!" + _client->getUsername() + "@"
                                     + _client->getHostname() + " JOIN " + target + "\r\n";
-    _client->sendMessage("Welcome to " + target + " channel!\r\n");
-    channel->broadcast(formatted_msg, _client);
-    if (!channel->getTopic().empty())
-        _client->sendMessage(channel->getTopic() + "\r\n");
-    else
-        _client->sendMessage("Topic of this channel is not set yet\r\n");
-    // Send name list (wrote by bot and need for debug)
-    std::string names = ":server 353 " + _client->getNickname() + " = " + target + " :";
-    const std::vector<Client*>& clients = channel->getClients();
-    for (size_t i = 0; i < clients.size(); ++i)
-    {
-        names += clients[i]->getNickname();
-        if (i < clients.size() - 1)
-            names += " ";
+        _client->sendMessage("Welcome to " + target + " channel!\r\n");
+        channel->broadcast(formatted_msg, _client);
+        if (!channel->getTopic().empty())
+            _client->sendMessage(channel->getTopic() + "\r\n");
+        else
+            _client->sendMessage("Topic of this channel is not set yet\r\n");
+        continue_loop_Join(start, end, channels);
     }
-    _client->sendMessage(names + "\r\n");
-    _client->sendMessage(":server 366 " + _client->getNickname() + " " + target + " :End of NAMES list\r\n");
 }
 
 void    Command::processPrivmsg()
@@ -286,13 +283,13 @@ void    Command::processPrivmsg()
     _iss >> target; // extract channel or nickname
     std::string message;
     std::getline(_iss, message);
+    clear_space(message);
     if (target.empty() || message.empty())
     {
         _client->sendMessage("server 461: " + _client->getNickname() + " sent not enough parameters (PRIVMSG)\r\n");
         return ;
     }
-    std::cout << "PRIVMSG from " << _client->getNickname() << " to " << target << ": " << message << std::endl;
-    if (target[0] == '#')
+    if (target[0] == '#' || target[0] == '&')
     {
         if (_channels.find(target) == _channels.end())
         {

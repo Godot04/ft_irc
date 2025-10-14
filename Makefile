@@ -12,6 +12,7 @@ SRCS = main.cpp \
        Client.cpp \
        Channel.cpp \
        Command.cpp \
+	   Command_utils.cpp \
 	   Reply.cpp \
 
 OBJS = $(addprefix $(OBJ_DIR), $(SRCS:.cpp=.o))

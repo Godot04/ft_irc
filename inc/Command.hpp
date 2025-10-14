@@ -34,6 +34,9 @@ class Command
         void    processTopic();
         void    processKick();
         void    processList();
+        // Utils
+        void    continue_loop_Join(size_t &start, size_t &end, std::string channels);
+        void    clear_space(std::string &message);
 };
 
 #endif
