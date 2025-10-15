@@ -17,6 +17,7 @@ class Command
         std::string                      _command;
         std::istringstream&              _iss;
         std::map<std::string, Channel*>& _channels;
+        std::map<int, Client*>&          _clients;
 
     public:
         Command(Server* server, Client* client, const std::string& command, std::istringstream& iss);
@@ -37,6 +38,7 @@ class Command
         // Utils
         void    continue_loop_Join(size_t &start, size_t &end, std::string channels);
         void    clear_space(std::string &message);
+        Client* get_other_nick(std::string target_nick);
 };
 
 #endif
