@@ -14,6 +14,8 @@ SRCS = main.cpp \
        Command.cpp \
 	   Reply.cpp \
 	   Server_Commands.cpp \
+	   IRCCommand.cpp \
+	   ChannelsClientsManager.cpp
 
 OBJS = $(addprefix $(OBJ_DIR), $(SRCS:.cpp=.o))
 
@@ -44,5 +46,8 @@ test_clean:
 	rm -rf googletests
 
 re: fclean all
+
+run_server:
+	./ft_irc_serv 1201 123
 
 .PHONY: all clean fclean re

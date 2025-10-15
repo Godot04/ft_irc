@@ -1,0 +1,1 @@
+/usr/bin/c++ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o CMakeFiles/command_test.dir/home/zkhojazo/Desktop/ft_irc_dir/ft_irc_github/srcs/IRCCommand.cpp.o -o command_test  lib/libgtest.a lib/libgtest_main.a -lpthread lib/libgtest.a 

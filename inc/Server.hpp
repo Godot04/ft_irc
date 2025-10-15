@@ -12,6 +12,9 @@
 #include <poll.h>
 #include <algorithm>
 
+#include <IRCCommand.hpp>
+#include <ChannelsClientsManager.hpp>
+
 # define PRINT_CLIENT_INFO 1
 
 class Client;
@@ -26,7 +29,7 @@ private:
     std::vector<pollfd>     _pollfds;  // pfd | plfd | plfd ....xpfd   (push_back(xpfd))
     std::map<int, Client*>  _clients;    // key - value pair.  key should be unique. 12 - popov 13 - khojazo   (_clients.at(12) - returns popov
     std::map<std::string, Channel*> _channels; // next step is to make it possible for clients to create channels
-
+    ChannelsClientsManager   _manager;
 public:
     Server(int port, const std::string& password);
     ~Server();
