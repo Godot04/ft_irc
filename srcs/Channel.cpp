@@ -30,7 +30,7 @@ void Channel::removeClient(Client* client)
             break;
         }
     }
-    
+
     // Remove from operators
     for (std::vector<Client*>::iterator it = _operators.begin(); it != _operators.end(); ++it)
     {
@@ -40,7 +40,7 @@ void Channel::removeClient(Client* client)
             break;
         }
     }
-    
+
     // Remove channel from client's channel list
     for (std::vector<std::string>::iterator it = client->getChannels().begin(); it != client->getChannels().end(); ++it)
     {
@@ -57,11 +57,11 @@ void Channel::addOperator(Client* client)
     // Check if client is already an operator
     if (isOperator(client))
         return;
-    
+
     // Check if client is in channel
     if (!isClientInChannel(client))
         addClient(client);
-    
+
     _operators.push_back(client);
 }
 
