@@ -8,7 +8,7 @@
 
 class Server;
 class Client;
-
+#include "Channel.hpp"
 class Command
 {
     private:

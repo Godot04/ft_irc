@@ -5,7 +5,7 @@
 #include <string>
 #include "ReplyNumbers.hpp"
 #include "Client.hpp"
-
+#include "ReplyNumbers.hpp"
 
 class Reply {
 private:

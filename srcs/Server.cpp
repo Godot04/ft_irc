@@ -69,6 +69,7 @@ Server::Server(int port, const std::string& password)
     pfd.revents = 0;
     _pollfds.push_back(pfd);
 
+    _manager.setClientsMap(&_clients, &_password, &_pollfds);
     std::cout << "Server initialized on port " << _port << std::endl;
 }
 
@@ -96,7 +97,7 @@ void Server::start()
 
     while (true)
     {
-        if (poll(&_pollfds[0], _pollfds.size(), -1) < 0)
+        if (poll(&_pollfds[0], _pollfds.size(), -1) < 0) /// exit after period of time
         {
             if (errno == EINTR)
                 continue;
@@ -192,44 +193,49 @@ void Server::handleClientMessage(int clientfd)
     {
         return ; // Wait for more data
     }
-    for (std::string message = client->getNextMessage(); !message.empty(); message = client->getNextMessage())
-    {
-        std::istringstream iss(message);
-        std::string command;
-        iss >> command;
-        std::istringstream iss3(message);
-        registerClient(client, iss3);
-        Command cmd(this, client, command, iss);
-        if (client->isRegistered())
-        {
-            cmd.executeCommands();
-            if (client->isRegistered() &&
-                std::find(client->getChannels().begin(), client->getChannels().end(), "#general") == client->getChannels().end())
-            {
-                bool the_first_one = false;
-                std::string defaultChannel = "#general";
-                Channel* channel;
-                if (_channels.find(defaultChannel) == _channels.end())
-                {
-                    channel = new Channel(defaultChannel);
-                    _channels[defaultChannel] = channel;
-                    the_first_one = true;
-                    channel->setTopic("Channel for old fellows\r\n");
-                }
-                else
-                    channel = _channels[defaultChannel];
-                if (the_first_one)
-                    channel->addOperator(client);
-                else
-                    channel->addClient(client);
-                client->addChannel(defaultChannel);
-                std::string join_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n";
-                client->sendMessage(join_msg);
-                channel->broadcast(join_msg, client);
-                client->sendMessage(channel->getTopic() + "\r\n");
-            }
-        }
-    }
+    _manager.handleClientMessage(client);
+    // Command cmd(this, )
+    // std::cout << "[Server] Received message: " << client->getBuffer() << " client status: " << (client->isRegistered() ? "Registered" : "Not Registered") << std::endl;
+    // for (std::string message = client->getNextMessage(); !message.empty(); message = client->getNextMessage())
+    // {
+    //     std::istringstream iss(message);
+    //     registerClient(client, iss);
+    //     if (client->isRegistered())
+    //     {
+    //         std::istringstream cmdIss(message);  // reset to start
+    //         if (handleOperatorCommand(client, cmdIss))
+    //             continue;
+    //         if (handleClientCommands(client, cmdIss)) {
+    //             if (client->isRegistered() &&
+    //                 std::find(client->getChannels().begin(), client->getChannels().end(), "#general") == client->getChannels().end())
+    //             {
+    //                 bool the_first_one = false;
+    //                 std::string defaultChannel = "#general";
+    //                 Channel* channel;
+    //                 if (_channels.find(defaultChannel) == _channels.end())
+    //                 {
+    //                     channel = new Channel(defaultChannel);
+    //                     _channels[defaultChannel] = channel;
+    //                     the_first_one = true;
+    //                     channel->setTopic("Channel for old fellows\r\n");
+    //                 }
+    //                 else
+    //                     channel = _channels[defaultChannel];
+    //                 if (the_first_one)
+    //                     channel->addOperator(client);
+    //                 else
+    //                     channel->addClient(client);
+    //                 client->addChannel(defaultChannel);
+    //                 std::string join_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n";
+    //                 client->sendMessage(join_msg);
+    //                 channel->broadcast(join_msg, client);
+    //                 client->sendMessage(channel->getTopic() + "\r\n");
+    //             }
+    //             std::istringstream cmdIss(message);  // reset to start
+    //             // else if () // other commands for operators
+    //         }
+    //     }
+    // }
     client->clearBuffer();
     if (PRINT_CLIENT_INFO && client->isRegistered())
         client->printClientInfo();
@@ -252,8 +258,7 @@ void Server::registerClient(Client* client, std::istringstream& iss) {
         processUser(client, iss);
     else if (!client->isRegistered())
         Reply::unknownCommand(*client, command);
-    if (!client->isRegistered() && client->isAuthenticated() && client->isNicknameSet() &&
-        client->isUsernameSet() && !client->isCAPNegotiation())
+    if (!client->isRegistered() && client->isAuthenticated() && client->isNicknameSet() && client->isUsernameSet() && !client->isCAPNegotiation())
     {
         client->setRegistered(true);
     }
@@ -334,8 +339,8 @@ void Server::processUser(Client* client, std::istringstream& iss) {
     }
     client->setUsername(username);
     client->setRealname(realname);
-    if (!client->getNickname().empty())
-        client->setRegistered(true);
+    // if (!client->getNickname().empty())
+    //     client->setRegistered(true);
 }
 
 void Server::removeClient(int clientfd)
@@ -346,9 +351,9 @@ void Server::removeClient(int clientfd)
     // Remove from channels
     for (std::vector<std::string>::iterator it = client->getChannels().begin(); it != client->getChannels().end(); ++it)
     {
-        Channel *channel = _channels[*it];
-        if (channel)
-            channel->removeClient(client);
+        std::map<std::string, Channel*>::iterator chIt = _channels.find(*it);
+        if (chIt != _channels.end() && chIt->second)
+            chIt->second->removeClient(client);
     }
     // Remove from pollfds
     for (std::vector<pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it)
@@ -370,7 +375,9 @@ std::map<int, Client*>& Server::getClients()
 {
     return _clients;
 }
-
+// vector
+// string.
+// *str
 std::map<std::string, Channel*>& Server::getChannels()
 {
     return _channels;
