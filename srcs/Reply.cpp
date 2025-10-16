@@ -16,7 +16,7 @@ std::string Reply::build(const std::string& code, const std::string& target, con
 
 // Example reply builders (add more as needed)
 void Reply::welcome(const Client& client) {
-    client.sendMessage(Reply::build(RPL_WELCOME, client.getNickname(), "Welcome to the ft_IRC Network, " + client.getNickname()));
+    client.sendMessage(Reply::build(RPL_WELCOME, client.getNickname(), "Welcome to the ft_IRC Network"));
 }
 
 void Reply::passwordMismatch(const Client& client) {
@@ -41,6 +41,10 @@ void Reply::nicknameInUse(const Client& client, const std::string& nickname) {
 
 std::string Reply::noSuchNick(const std::string& target, const Client& client) {
     return build(ERR_NOSUCHNICK, target, client.getNickname() + " No such nick/channel");
+}
+
+void Reply::connectionClosed(const Client& client) {
+    client.sendMessage("Connection closed\r\n");
 }
 
 

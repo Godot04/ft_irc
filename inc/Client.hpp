@@ -16,6 +16,8 @@ private:
     bool                _isCAPNegotiation;
     std::vector<std::string> _channels;
     std::string         _buffer;
+    time_t              _connectionTime; // set in seconds
+    
 
 public:
     Client(int fd);
@@ -30,6 +32,8 @@ public:
     void                sendMessage(const std::string& msg) const;
     void				addChannel(const std::string& channel);
     void                removeChannel(const std::string& channel);
+    void                updateConnectionTime();
+    time_t              getTimePassed() const;
     // Getters & Setters
     int                 getFd() const;
     const std::string&  getNickname() const;

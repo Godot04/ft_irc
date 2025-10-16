@@ -67,7 +67,7 @@ void ChannelsClientsManager::handleRegisteredClientMessage(Client* client, IRCCo
 bool ChannelsClientsManager::isNickInUse(const std::string& nickname) const {
 	for (std::map<int, Client*>::iterator it = _clients->begin(); it != _clients->end(); it++)
 	{
-		if (it->second->getNickname() == nickname)
+		if (it->second && it->second->getNickname() == nickname)
 			return true;
 	}
 	return false;

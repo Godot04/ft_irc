@@ -1,7 +1,7 @@
 #include "../inc/ft_irc.hpp"
 
 Client::Client(int fd)
-    : _fd(fd), _authenticated(false), _registered(false), _isCAPNegotiation(false)
+    : _fd(fd), _authenticated(false), _registered(false), _isCAPNegotiation(false), _connectionTime(time(NULL))
 {
 }
 
@@ -145,6 +145,14 @@ bool Client::isCAPNegotiation() const
 void Client::setCAPNegotiation(bool status)
 {
     _isCAPNegotiation = status;
+}
+
+void Client::updateConnectionTime() {
+    _connectionTime = time(NULL); // in seconds
+}
+
+time_t Client::getTimePassed() const {
+    return time(NULL) - _connectionTime;
 }
 
 void Client::printClientInfo() const

@@ -18,6 +18,7 @@ public:
 	static void needMoreParams(const Client& client, const std::string& command);
 	static void nicknameInUse(const Client& client, const std::string& nickname);
 	static std::string noSuchNick(const std::string& target, const Client& client);
+	static void connectionClosed(const Client& client);
 };
 
 #endif // REPLY_HPP
