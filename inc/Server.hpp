@@ -30,8 +30,9 @@ private:
     std::map<int, Client*>  _clients;    // key - value pair.  key should be unique. 12 - popov 13 - khojazo   (_clients.at(12) - returns popov
     std::map<std::string, Channel*> _channels; // next step is to make it possible for clients to create channels
     ChannelsClientsManager   _manager;
+    time_t              _clientTimeToLive; // in seconds
 public:
-    Server(int port, const std::string& password);
+    Server(int port, const std::string& password, time_t clientTimeToLive);
     ~Server();
 
     void    start();
@@ -46,6 +47,7 @@ public:
     void    handleCAP(Client* client, std::istringstream& iss);
     bool    handleOperatorCommand(Client* client, std::istringstream& iss);
     bool    processKick(Client* client, std::istringstream& iss);
+
     // Getters
     std::map<int, Client*>&              getClients();
     std::map<std::string, Channel*>&     getChannels();
