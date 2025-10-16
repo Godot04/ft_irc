@@ -3,6 +3,9 @@
 
 #include <string>
 #include <vector>
+#include <map>
+#include "Channel.hpp"
+#include "Client.hpp"
 
 enum ModeSign {
 	NONE,
@@ -33,7 +36,7 @@ public:
 private:
 	std::string _input;
 	std::string _cmd;
-	std::string _prefix; // 
+	std::string _prefix;
 	std::vector<std::string> _params;
 	std::string _errorNum;
 	ModeSign _currentModeSign;
@@ -49,6 +52,10 @@ private:
 	void							handleUserCmd(std::istringstream &iss);
 	void							handleCapCmd(std::istringstream &iss);
 	void							handleJoinCmd(std::istringstream &iss);
+	void							handlePrivmsgCmd(std::istringstream &iss);
+	void							handleInviteCmd(std::istringstream &iss);
+	void							handleKickCmd(std::istringstream &iss);
+	void							handleTopicCmd(std::istringstream &iss);
 	void							processCommand();
 	void							trimCRLF(std::string &str);
 public:

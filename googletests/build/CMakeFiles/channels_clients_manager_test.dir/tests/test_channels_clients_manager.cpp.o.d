@@ -277,9 +277,9 @@ CMakeFiles/channels_clients_manager_test.dir/tests/test_channels_clients_manager
  /home/opopov/Documents/ft_irc/googletests/tests/../../inc/Channel.hpp \
  /home/opopov/Documents/ft_irc/googletests/tests/../../inc/Client.hpp \
  /home/opopov/Documents/ft_irc/googletests/tests/../../inc/IRCCommand.hpp \
- /home/opopov/Documents/ft_irc/googletests/tests/../../inc/ChannelsClientsManager.hpp \
  /home/opopov/Documents/ft_irc/googletests/tests/../../inc/Channel.hpp \
  /home/opopov/Documents/ft_irc/googletests/tests/../../inc/Client.hpp \
+ /home/opopov/Documents/ft_irc/googletests/tests/../../inc/ChannelsClientsManager.hpp \
  /home/opopov/Documents/ft_irc/googletests/tests/../../inc/IRCCommand.hpp \
  /home/opopov/Documents/ft_irc/googletests/tests/../../inc/Reply.hpp \
  /home/opopov/Documents/ft_irc/googletests/tests/../../inc/ReplyNumbers.hpp \

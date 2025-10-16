@@ -260,9 +260,9 @@ CMakeFiles/channels_clients_manager_test.dir/home/opopov/Documents/ft_irc/srcs/C
   /usr/include/c++/11/bits/unordered_map.h \
   /usr/include/c++/11/pstl/execution_defs.h \
   /home/opopov/Documents/ft_irc/inc/IRCCommand.hpp \
-  /home/opopov/Documents/ft_irc/inc/ChannelsClientsManager.hpp \
   /home/opopov/Documents/ft_irc/inc/Channel.hpp \
   /home/opopov/Documents/ft_irc/inc/Client.hpp \
+  /home/opopov/Documents/ft_irc/inc/ChannelsClientsManager.hpp \
   /home/opopov/Documents/ft_irc/inc/IRCCommand.hpp \
   /home/opopov/Documents/ft_irc/inc/Reply.hpp \
   /home/opopov/Documents/ft_irc/inc/ReplyNumbers.hpp \
@@ -430,8 +430,6 @@ CMakeFiles/channels_clients_manager_test.dir/home/opopov/Documents/ft_irc/srcs/C
   /usr/include/c++/11/bits/vector.tcc \
   /home/opopov/Documents/ft_irc/inc/Client.hpp \
   /home/opopov/Documents/ft_irc/inc/IRCCommand.hpp \
-  /home/opopov/Documents/ft_irc/inc/Reply.hpp \
-  /home/opopov/Documents/ft_irc/inc/ReplyNumbers.hpp \
   /usr/include/c++/11/map \
   /usr/include/c++/11/bits/stl_tree.h \
   /usr/include/c++/11/ext/aligned_buffer.h \
@@ -445,6 +443,8 @@ CMakeFiles/channels_clients_manager_test.dir/home/opopov/Documents/ft_irc/srcs/C
   /usr/include/c++/11/bits/invoke.h \
   /usr/include/c++/11/bits/stl_multimap.h \
   /usr/include/c++/11/bits/erase_if.h \
+  /home/opopov/Documents/ft_irc/inc/Reply.hpp \
+  /home/opopov/Documents/ft_irc/inc/ReplyNumbers.hpp \
   /usr/include/c++/11/iostream \
   /usr/include/c++/11/ostream \
   /usr/include/c++/11/ios \
@@ -737,9 +737,9 @@ CMakeFiles/channels_clients_manager_test.dir/home/opopov/Documents/ft_irc/srcs/C
   /usr/include/c++/11/bits/unordered_map.h \
   /usr/include/c++/11/pstl/execution_defs.h \
   /home/opopov/Documents/ft_irc/inc/IRCCommand.hpp \
-  /home/opopov/Documents/ft_irc/inc/ChannelsClientsManager.hpp \
   /home/opopov/Documents/ft_irc/inc/Channel.hpp \
   /home/opopov/Documents/ft_irc/inc/Client.hpp \
+  /home/opopov/Documents/ft_irc/inc/ChannelsClientsManager.hpp \
   /home/opopov/Documents/ft_irc/inc/IRCCommand.hpp \
   /home/opopov/Documents/ft_irc/inc/Reply.hpp \
   /home/opopov/Documents/ft_irc/inc/ReplyNumbers.hpp \
@@ -904,6 +904,21 @@ CMakeFiles/channels_clients_manager_test.dir/home/opopov/Documents/ft_irc/srcs/I
   /usr/include/c++/11/bits/stl_vector.h \
   /usr/include/c++/11/bits/stl_bvector.h \
   /usr/include/c++/11/bits/vector.tcc \
+  /usr/include/c++/11/map \
+  /usr/include/c++/11/bits/stl_tree.h \
+  /usr/include/c++/11/ext/aligned_buffer.h \
+  /usr/include/c++/11/bits/node_handle.h \
+  /usr/include/c++/11/bits/stl_map.h \
+  /usr/include/c++/11/tuple \
+  /usr/include/c++/11/utility \
+  /usr/include/c++/11/bits/stl_relops.h \
+  /usr/include/c++/11/array \
+  /usr/include/c++/11/bits/uses_allocator.h \
+  /usr/include/c++/11/bits/invoke.h \
+  /usr/include/c++/11/bits/stl_multimap.h \
+  /usr/include/c++/11/bits/erase_if.h \
+  /home/opopov/Documents/ft_irc/inc/Channel.hpp \
+  /home/opopov/Documents/ft_irc/inc/Client.hpp \
   /home/opopov/Documents/ft_irc/inc/ReplyNumbers.hpp \
   /usr/include/c++/11/sstream \
   /usr/include/c++/11/istream \
@@ -1467,9 +1482,9 @@ CMakeFiles/channels_clients_manager_test.dir/tests/test_channels_clients_manager
   /home/opopov/Documents/ft_irc/inc/Channel.hpp \
   /home/opopov/Documents/ft_irc/inc/Client.hpp \
   /home/opopov/Documents/ft_irc/inc/IRCCommand.hpp \
-  /home/opopov/Documents/ft_irc/inc/ChannelsClientsManager.hpp \
   /home/opopov/Documents/ft_irc/inc/Channel.hpp \
   /home/opopov/Documents/ft_irc/inc/Client.hpp \
+  /home/opopov/Documents/ft_irc/inc/ChannelsClientsManager.hpp \
   /home/opopov/Documents/ft_irc/inc/IRCCommand.hpp \
   /home/opopov/Documents/ft_irc/inc/Reply.hpp \
   /home/opopov/Documents/ft_irc/inc/ReplyNumbers.hpp \

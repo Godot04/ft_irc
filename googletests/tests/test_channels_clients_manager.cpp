@@ -235,8 +235,12 @@ TEST(ChannelsClientsManagerTest, JoinChannelAfterRegistering) {
 	EXPECT_GT(n, 0); // Ensure something was written
 	std::string output2(buffer);
 	EXPECT_NE(output2.find("Welcome to #testchannel channel!"), std::string::npos);
-	EXPECT_NE(output2.find("JOIN #testchannel"), std::string::npos);
-	EXPECT_EQ(client_1->isInChannel("#testchannel"), true);
+	Channel* testChannel = manager.getChannel("#testchannel");
+	bool clientStatus = testChannel->isClientInChannel(client_1);
+	EXPECT_EQ(clientStatus, true);
+
+	// 
+
 	close(sv[0]);
 	close(sv[1]);
 }

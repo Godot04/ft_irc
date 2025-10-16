@@ -158,6 +158,21 @@ CMakeFiles/command_test.dir/home/opopov/Documents/ft_irc/srcs/IRCCommand.cpp.o: 
   /usr/include/c++/11/bits/stl_vector.h \
   /usr/include/c++/11/bits/stl_bvector.h \
   /usr/include/c++/11/bits/vector.tcc \
+  /usr/include/c++/11/map \
+  /usr/include/c++/11/bits/stl_tree.h \
+  /usr/include/c++/11/ext/aligned_buffer.h \
+  /usr/include/c++/11/bits/node_handle.h \
+  /usr/include/c++/11/bits/stl_map.h \
+  /usr/include/c++/11/tuple \
+  /usr/include/c++/11/utility \
+  /usr/include/c++/11/bits/stl_relops.h \
+  /usr/include/c++/11/array \
+  /usr/include/c++/11/bits/uses_allocator.h \
+  /usr/include/c++/11/bits/invoke.h \
+  /usr/include/c++/11/bits/stl_multimap.h \
+  /usr/include/c++/11/bits/erase_if.h \
+  /home/opopov/Documents/ft_irc/inc/Channel.hpp \
+  /home/opopov/Documents/ft_irc/inc/Client.hpp \
   /home/opopov/Documents/ft_irc/inc/ReplyNumbers.hpp \
   /usr/include/c++/11/sstream \
   /usr/include/c++/11/istream \
@@ -553,9 +568,9 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
   /usr/include/c++/11/algorithm \
   /usr/include/c++/11/pstl/glue_algorithm_defs.h \
   /home/opopov/Documents/ft_irc/inc/IRCCommand.hpp \
-  /home/opopov/Documents/ft_irc/inc/ChannelsClientsManager.hpp \
   /home/opopov/Documents/ft_irc/inc/Channel.hpp \
   /home/opopov/Documents/ft_irc/inc/Client.hpp \
+  /home/opopov/Documents/ft_irc/inc/ChannelsClientsManager.hpp \
   /home/opopov/Documents/ft_irc/inc/IRCCommand.hpp \
   /home/opopov/Documents/ft_irc/inc/Reply.hpp \
   /home/opopov/Documents/ft_irc/inc/ReplyNumbers.hpp \
@@ -609,14 +624,6 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 ../googletest/googletest/include/gtest/internal/gtest-string.h:
 
 ../googletest/googletest/include/gtest/internal/gtest-filepath.h:
-
-/usr/include/c++/11/bits/stl_multimap.h:
-
-../googletest/googletest/include/gtest/gtest-param-test.h:
-
-/usr/include/c++/11/bits/stl_map.h:
-
-/usr/include/c++/11/map:
 
 /usr/lib/gcc/x86_64-linux-gnu/11/include/float.h:
 
@@ -694,6 +701,14 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 
 /usr/include/x86_64-linux-gnu/bits/types/struct_statx.h:
 
+/usr/include/c++/11/bits/hashtable_policy.h:
+
+/usr/include/x86_64-linux-gnu/bits/statx-generic.h:
+
+/usr/include/asm-generic/posix_types.h:
+
+/usr/include/x86_64-linux-gnu/asm/posix_types.h:
+
 /usr/include/stdlib.h:
 
 /usr/include/c++/11/bits/string_view.tcc:
@@ -744,6 +759,10 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 
 /usr/include/time.h:
 
+/usr/include/x86_64-linux-gnu/asm/posix_types_64.h:
+
+/usr/include/x86_64-linux-gnu/bits/cpu-set.h:
+
 /usr/include/pthread.h:
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/gthr-default.h:
@@ -786,21 +805,19 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 
 /usr/include/x86_64-linux-gnu/sys/select.h:
 
-/usr/include/asm-generic/posix_types.h:
-
 /usr/include/x86_64-linux-gnu/bits/struct_stat.h:
 
 /usr/include/c++/11/bits/stl_set.h:
 
 /usr/include/x86_64-linux-gnu/c++/11/bits/atomic_word.h:
 
-/usr/include/c++/11/tuple:
-
 /usr/include/c++/11/bits/stl_tree.h:
 
-/home/opopov/Documents/ft_irc/inc/Client.hpp:
+/usr/include/c++/11/tuple:
 
 /usr/include/c++/11/bits/hash_bytes.h:
+
+/home/opopov/Documents/ft_irc/inc/Client.hpp:
 
 /usr/include/c++/11/bits/move.h:
 
@@ -864,15 +881,13 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 
 /usr/include/asm-generic/errno-base.h:
 
-/usr/include/x86_64-linux-gnu/bits/cpu-set.h:
-
-/usr/include/x86_64-linux-gnu/asm/posix_types_64.h:
-
 /usr/include/c++/11/ext/numeric_traits.h:
 
 /usr/include/c++/11/bits/atomic_base.h:
 
 /usr/include/features.h:
+
+/usr/include/c++/11/bits/stl_multimap.h:
 
 ../googletest/googletest/include/gtest/gtest_prod.h:
 
@@ -909,6 +924,8 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 /usr/include/x86_64-linux-gnu/gnu/stubs-64.h:
 
 /usr/include/x86_64-linux-gnu/sys/stat.h:
+
+/usr/include/c++/11/map:
 
 /usr/include/x86_64-linux-gnu/bits/wchar.h:
 
@@ -993,12 +1010,6 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 /usr/include/c++/11/locale:
 
 /usr/include/ctype.h:
-
-/home/opopov/Documents/ft_irc/inc/Channel.hpp:
-
-/usr/include/c++/11/bits/cpp_type_traits.h:
-
-/usr/include/c++/11/bits/stl_iterator_base_funcs.h:
 
 /usr/include/c++/11/ext/alloc_traits.h:
 
@@ -1140,6 +1151,32 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 
 /usr/include/c++/11/bits/vector.tcc:
 
+../googletest/googletest/include/gtest/gtest-param-test.h:
+
+/usr/include/c++/11/bits/stl_map.h:
+
+/usr/include/c++/11/bits/stl_relops.h:
+
+/usr/include/c++/11/array:
+
+/usr/include/c++/11/bits/unique_lock.h:
+
+/usr/include/c++/11/bits/uses_allocator.h:
+
+/usr/include/endian.h:
+
+/usr/include/stdint.h:
+
+/usr/include/c++/11/bits/ptr_traits.h:
+
+/usr/include/c++/11/bits/erase_if.h:
+
+/usr/include/c++/11/bits/cpp_type_traits.h:
+
+/usr/include/c++/11/bits/stl_iterator_base_funcs.h:
+
+/home/opopov/Documents/ft_irc/inc/Channel.hpp:
+
 /home/opopov/Documents/ft_irc/inc/ReplyNumbers.hpp:
 
 /usr/include/c++/11/bits/atomic_lockfree_defines.h:
@@ -1190,6 +1227,10 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 
 /usr/include/c++/11/bits/locale_facets.h:
 
+/usr/include/x86_64-linux-gnu/bits/types/struct_statx_timestamp.h:
+
+/usr/include/c++/11/cwctype:
+
 /usr/include/x86_64-linux-gnu/asm/types.h:
 
 /usr/include/c++/11/bits/streambuf_iterator.h:
@@ -1218,14 +1259,6 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 
 /usr/include/c++/11/bits/stl_raw_storage_iter.h:
 
-/usr/include/c++/11/bits/unique_lock.h:
-
-/usr/include/c++/11/bits/uses_allocator.h:
-
-/usr/include/c++/11/bits/stl_relops.h:
-
-/usr/include/c++/11/array:
-
 /usr/include/linux/stddef.h:
 
 /usr/include/c++/11/bits/refwrap.h:
@@ -1233,14 +1266,6 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 /usr/include/c++/11/bits/shared_ptr_atomic.h:
 
 /usr/include/c++/11/bits/stl_multiset.h:
-
-/usr/include/endian.h:
-
-/usr/include/stdint.h:
-
-/usr/include/c++/11/bits/ptr_traits.h:
-
-/usr/include/c++/11/bits/erase_if.h:
 
 /usr/include/c++/11/string:
 
@@ -1287,13 +1312,3 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: ../tests/test_comand_
 /usr/include/asm-generic/bitsperlong.h:
 
 /usr/include/linux/posix_types.h:
-
-/usr/include/c++/11/cwctype:
-
-/usr/include/x86_64-linux-gnu/bits/types/struct_statx_timestamp.h:
-
-/usr/include/x86_64-linux-gnu/asm/posix_types.h:
-
-/usr/include/c++/11/bits/hashtable_policy.h:
-
-/usr/include/x86_64-linux-gnu/bits/statx-generic.h:

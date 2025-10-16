@@ -371,38 +371,253 @@ TEST(CommandClassTest, JoinCommandMultipleChannelsTest) {
 	EXPECT_EQ(cmd.getErrorNum(), "");
 }
 
-// TEST(CommandClassTest, InviteCommandValidTest) {
-// 	std::string inviteStr = "INVITE Kilroy #Finnish\r\n";
-// 	IRCCommand cmd(inviteStr);
-// 	EXPECT_EQ(cmd.isValid(), true);
-// 	EXPECT_EQ(cmd.getCommand(), "INVITE");
-// 	std::vector<std::string> params = cmd.getParams();
-// 	ASSERT_EQ(params.size(), 2);
-// 	EXPECT_EQ(params.at(0), "Kilroy");
-// 	EXPECT_EQ(params.at(1), "#Finnish");
-// 	EXPECT_EQ(cmd.getErrorNum(), "");
-// }
 
-// TEST(CommandClassTest, InviteCommandMissingParamsTest) {
-// 	std::string inviteStr = "INVITE Kilroy\r\n";
-// 	IRCCommand cmd(inviteStr);
-// 	EXPECT_EQ(cmd.isValid(), false);
-// 	EXPECT_EQ(cmd.getCommand(), "INVITE");
-// 	std::vector<std::string> params = cmd.getParams();
-// 	ASSERT_EQ(params.size(), 1);
-// 	EXPECT_EQ(params.at(0), "Kilroy");
-// 	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
-// }
 
-// TEST(CommandClassTest, InviteCommandNoParamsTest) {
-// 	std::string inviteStr = "INVITE\r\n";
-// 	IRCCommand cmd(inviteStr);
-// 	EXPECT_EQ(cmd.isValid(), false);
-// 	EXPECT_EQ(cmd.getCommand(), "INVITE");
-// 	std::vector<std::string> params = cmd.getParams();
-// 	ASSERT_EQ(params.size(), 0);
-// 	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
-// }
+// INVITE Command Tests
+TEST(CommandClassTest, InviteCommandValidTest) {
+	std::string inviteStr = "INVITE Kilroy #Finnish\r\n";
+	IRCCommand cmd(inviteStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "INVITE");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "Kilroy");
+	EXPECT_EQ(params.at(1), "#Finnish");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, InviteCommandMissingChannelTest) {
+	std::string inviteStr = "INVITE Kilroy\r\n";
+	IRCCommand cmd(inviteStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "INVITE");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 1);
+	EXPECT_EQ(params.at(0), "Kilroy");
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+TEST(CommandClassTest, InviteCommandNoParamsTest) {
+	std::string inviteStr = "INVITE\r\n";
+	IRCCommand cmd(inviteStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "INVITE");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 0);
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+// TOPIC Command Tests
+TEST(CommandClassTest, TopicCommandViewTest) {
+	std::string topicStr = "TOPIC #Finnish\r\n";
+	IRCCommand cmd(topicStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "TOPIC");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 1);
+	EXPECT_EQ(params.at(0), "#Finnish");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, TopicCommandSetTest) {
+	std::string topicStr = "TOPIC #Finnish :New topic here\r\n";
+	IRCCommand cmd(topicStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "TOPIC");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "#Finnish");
+	EXPECT_EQ(params.at(1), "New topic here");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, TopicCommandSetWithoutColonTest) {
+	std::string topicStr = "TOPIC #Finnish NewTopic\r\n";
+	IRCCommand cmd(topicStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "TOPIC");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "#Finnish");
+	EXPECT_EQ(params.at(1), "NewTopic");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, TopicCommandNoChannelTest) {
+	std::string topicStr = "TOPIC\r\n";
+	IRCCommand cmd(topicStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "TOPIC");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 0);
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+TEST(CommandClassTest, TopicCommandEmptyTopicTest) {
+	std::string topicStr = "TOPIC #Finnish :\r\n";
+	IRCCommand cmd(topicStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "TOPIC");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 1);
+	EXPECT_EQ(params.at(0), "#Finnish");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+// KICK Command Tests
+TEST(CommandClassTest, KickCommandValidTest) {
+	std::string kickStr = "KICK #Finnish John\r\n";
+	IRCCommand cmd(kickStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "KICK");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "#Finnish");
+	EXPECT_EQ(params.at(1), "John");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, KickCommandWithReasonTest) {
+	std::string kickStr = "KICK #Finnish John :Bad behavior\r\n";
+	IRCCommand cmd(kickStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "KICK");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 3);
+	EXPECT_EQ(params.at(0), "#Finnish");
+	EXPECT_EQ(params.at(1), "John");
+	EXPECT_EQ(params.at(2), "Bad behavior");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, KickCommandMissingUserTest) {
+	std::string kickStr = "KICK #Finnish\r\n";
+	IRCCommand cmd(kickStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "KICK");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 1);
+	EXPECT_EQ(params.at(0), "#Finnish");
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+TEST(CommandClassTest, KickCommandNoParamsTest) {
+	std::string kickStr = "KICK\r\n";
+	IRCCommand cmd(kickStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "KICK");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 0);
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+TEST(CommandClassTest, KickCommandWithLongReasonTest) {
+	std::string kickStr = "KICK #Finnish John :This is a very long reason for kicking\r\n";
+	IRCCommand cmd(kickStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "KICK");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 3);
+	EXPECT_EQ(params.at(0), "#Finnish");
+	EXPECT_EQ(params.at(1), "John");
+	EXPECT_EQ(params.at(2), "This is a very long reason for kicking");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+// PRIVMSG Command Tests
+TEST(CommandClassTest, PrivmsgCommandToChannelTest) {
+	std::string privmsgStr = "PRIVMSG #channel :Hello world\r\n";
+	IRCCommand cmd(privmsgStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "PRIVMSG");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "#channel");
+	EXPECT_EQ(params.at(1), "Hello world");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, PrivmsgCommandToUserTest) {
+	std::string privmsgStr = "PRIVMSG John :Hi there!\r\n";
+	IRCCommand cmd(privmsgStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "PRIVMSG");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "John");
+	EXPECT_EQ(params.at(1), "Hi there!");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, PrivmsgCommandWithoutColonTest) {
+	std::string privmsgStr = "PRIVMSG #channel Hello\r\n";
+	IRCCommand cmd(privmsgStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "PRIVMSG");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "#channel");
+	EXPECT_EQ(params.at(1), "Hello");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, PrivmsgCommandNoMessageTest) {
+	std::string privmsgStr = "PRIVMSG #channel\r\n";
+	IRCCommand cmd(privmsgStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "PRIVMSG");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "#channel");
+	EXPECT_EQ(params.at(1), "");
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+TEST(CommandClassTest, PrivmsgCommandEmptyMessageTest) {
+	std::string privmsgStr = "PRIVMSG #channel :\r\n";
+	IRCCommand cmd(privmsgStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "PRIVMSG");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "#channel");
+	EXPECT_EQ(params.at(1), "");
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+TEST(CommandClassTest, PrivmsgCommandNoTargetTest) {
+	std::string privmsgStr = "PRIVMSG\r\n";
+	IRCCommand cmd(privmsgStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "PRIVMSG");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 0);
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+TEST(CommandClassTest, PrivmsgCommandLongMessageTest) {
+	std::string privmsgStr = "PRIVMSG #channel :This is a very long message with multiple words\r\n";
+	IRCCommand cmd(privmsgStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "PRIVMSG");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "#channel");
+	EXPECT_EQ(params.at(1), "This is a very long message with multiple words");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, PrivmsgCommandWithSpecialCharsTest) {
+	std::string privmsgStr = "PRIVMSG #channel :Hello! How are you? :)\r\n";
+	IRCCommand cmd(privmsgStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "PRIVMSG");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "#channel");
+	EXPECT_EQ(params.at(1), "Hello! How are you? :)");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
 
 
 int main(int argc, char **argv) {

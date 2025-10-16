@@ -31,6 +31,7 @@ public:
     // void addClientToChannel(Client* client, Channel* channel);
     // void removeClientFromChannel(Client* client, Channel* channel);
     // std::vector<Client*> getClientsInChannel(Channel* channel);
+	Channel							*getChannel(std::string const &channelName); // if null, channel doesn't exit
 
 private:
     std::map<std::string, Channel*>	_channels;
@@ -39,9 +40,20 @@ private:
 	std::vector<pollfd>     		*_pollfds;
 
 	// void							setNick(Client* client, IRCCommand& command);
+	// Registration
 	bool							isNickInUse(const std::string& nickname) const;
 	void							registerClient(Client* client, IRCCommand& command);
 	void							handleRegisteredClientMessage(Client* client, IRCCommand& command);
+
+	// Command execution
+	void							executePrivmsg(Client* client, IRCCommand& command);
+	void							executeJoin(Client* client, IRCCommand& command);
+	void							executeInvite(Client* client, IRCCommand& command);
+	void							executeTopic(Client* client, IRCCommand& command);
+	void							executeKick(Client* client, IRCCommand& command);
+	// Helper functions
+	Client*							getClientByNickname(const std::string& nickname, Client* client);
+	void							continueLoopJoin(size_t &start, size_t &end, const std::string& channels);
 };
 
 

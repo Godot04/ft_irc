@@ -68,6 +68,14 @@ void IRCCommand::handleParameters(std::istringstream &iss) {
         handleCapCmd(iss);
     else if (_cmd == "JOIN")
         handleJoinCmd(iss);
+    else if (_cmd == "PRIVMSG")
+        handlePrivmsgCmd(iss);
+    else if (_cmd == "INVITE")
+        handleInviteCmd(iss);
+    else if (_cmd == "KICK")
+        handleKickCmd(iss);
+    else if (_cmd == "TOPIC")
+        handleTopicCmd(iss);
 }
 
 void IRCCommand::handleJoinCmd(std::istringstream &iss) {
@@ -299,9 +307,156 @@ std::string const &IRCCommand::getErrorNum() const {
     return _errorNum;
 }
 
+void IRCCommand::handlePrivmsgCmd(std::istringstream &iss) {
+    std::string target;
+    iss >> target; // extract channel or nickname
+
+    if (target.empty()) {
+        _isValid = false;
+        _errorNum = ERR_NEEDMOREPARAMS;
+        return;
+    }
+
+    _params.push_back(target);
+
+    // Read the rest as message
+    std::string message;
+    std::getline(iss, message);
+
+    // Trim leading spaces
+    size_t firstNonSpace = message.find_first_not_of(" \t");
+    if (firstNonSpace != std::string::npos)
+        message = message.substr(firstNonSpace);
+
+    // Check if message starts with ':'
+    if (!message.empty() && message[0] == ':')
+        message = message.substr(1);
+
+    trimCRLF(message);
+
+    if (message.empty()) {
+        _isValid = false;
+        _errorNum = ERR_NEEDMOREPARAMS;
+        _params.push_back("");
+        return;
+    }
+
+    _params.push_back(message);
+    _isValid = true;
+}
+
+void IRCCommand::handleInviteCmd(std::istringstream &iss) {
+    std::string target_nick;
+    std::string target_channel;
+
+    iss >> target_nick >> target_channel;
+    trimCRLF(target_channel);
+
+    if (target_nick.empty() || target_channel.empty()) {
+        _isValid = false;
+        _errorNum = ERR_NEEDMOREPARAMS;
+        if (!target_nick.empty())
+            _params.push_back(target_nick);
+        if (!target_channel.empty())
+            _params.push_back(target_channel);
+        return;
+    }
+
+    _params.push_back(target_nick);
+    _params.push_back(target_channel);
+    _isValid = true;
+}
+
+void IRCCommand::handleKickCmd(std::istringstream &iss) {
+    std::string target_channel;
+    std::string target_nick;
+
+    iss >> target_channel >> target_nick;
+
+    trimCRLF(target_channel);
+    trimCRLF(target_nick);
+
+    if (target_channel.empty() || target_nick.empty()) {
+        _isValid = false;
+        _errorNum = ERR_NEEDMOREPARAMS;
+        if (!target_channel.empty())
+            _params.push_back(target_channel);
+        if (!target_nick.empty())
+            _params.push_back(target_nick);
+        return;
+    }
+
+    _params.push_back(target_channel);
+    _params.push_back(target_nick);
+
+    // Read optional kick message
+    std::string kick_message;
+    std::getline(iss, kick_message);
+
+    // Trim leading spaces
+    size_t firstNonSpace = kick_message.find_first_not_of(" \t");
+    if (firstNonSpace != std::string::npos)
+        kick_message = kick_message.substr(firstNonSpace);
+
+    // Check if message starts with ':'
+    if (!kick_message.empty() && kick_message[0] == ':')
+        kick_message = kick_message.substr(1);
+
+    trimCRLF(kick_message);
+
+    if (!kick_message.empty())
+        _params.push_back(kick_message);
+
+    _isValid = true;
+}
+
+void IRCCommand::handleTopicCmd(std::istringstream &iss) {
+    std::string target_channel;
+    iss >> target_channel;
+
+    trimCRLF(target_channel);
+
+    if (target_channel.empty()) {
+        _isValid = false;
+        _errorNum = ERR_NEEDMOREPARAMS;
+        return;
+    }
+
+    _params.push_back(target_channel);
+
+    // Read optional topic
+    std::string new_topic;
+    std::getline(iss, new_topic);
+
+    // Trim leading spaces
+    size_t firstNonSpace = new_topic.find_first_not_of(" \t");
+    if (firstNonSpace != std::string::npos)
+        new_topic = new_topic.substr(firstNonSpace);
+
+    // Check if topic starts with ':'
+    if (!new_topic.empty() && new_topic[0] == ':')
+        new_topic = new_topic.substr(1);
+
+    trimCRLF(new_topic);
+
+    if (!new_topic.empty())
+        _params.push_back(new_topic);
+
+    _isValid = true;
+}
+
 void IRCCommand::trimCRLF(std::string &str) {
+    // Remove \r\n at the end
     if (str.size() >= 2 && str.substr(str.size() - 2) == "\r\n") {
         str = str.substr(0, str.size() - 2);
+    }
+    // Remove \r at the end (in case only \r remains after getline)
+    else if (str.size() >= 1 && str[str.size() - 1] == '\r') {
+        str = str.substr(0, str.size() - 1);
+    }
+    // Remove \n at the end (in case only \n remains)
+    else if (str.size() >= 1 && str[str.size() - 1] == '\n') {
+        str = str.substr(0, str.size() - 1);
     }
 }
 
@@ -320,6 +475,3 @@ bool IRCCommand::isFlagSetValid(std::string const &flags) const {
     }
     return true;
 }
-
-//    Command: PASS
-//    Parameters: <password>

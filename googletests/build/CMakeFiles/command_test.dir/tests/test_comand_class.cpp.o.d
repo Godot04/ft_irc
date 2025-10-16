@@ -296,9 +296,9 @@ CMakeFiles/command_test.dir/tests/test_comand_class.cpp.o: \
  /usr/include/x86_64-linux-gnu/bits/poll.h /usr/include/c++/11/algorithm \
  /usr/include/c++/11/pstl/glue_algorithm_defs.h \
  /home/opopov/Documents/ft_irc/googletests/../inc/IRCCommand.hpp \
- /home/opopov/Documents/ft_irc/googletests/../inc/ChannelsClientsManager.hpp \
  /home/opopov/Documents/ft_irc/googletests/../inc/Channel.hpp \
  /home/opopov/Documents/ft_irc/googletests/../inc/Client.hpp \
+ /home/opopov/Documents/ft_irc/googletests/../inc/ChannelsClientsManager.hpp \
  /home/opopov/Documents/ft_irc/googletests/../inc/IRCCommand.hpp \
  /home/opopov/Documents/ft_irc/googletests/../inc/Reply.hpp \
  /home/opopov/Documents/ft_irc/googletests/../inc/ReplyNumbers.hpp \
