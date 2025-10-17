@@ -24,7 +24,7 @@ int main(int argc, char **argv)
 
     try
     {
-        Server server(port, password, 40);
+        Server server(port, password, 400);
         server.start();
     }
     catch (std::exception &e)

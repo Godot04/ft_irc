@@ -51,7 +51,7 @@ void ChannelsClientsManager::handleRegisteredClientMessage(Client* client, IRCCo
 			Reply::nicknameInUse(*client, newNick);
 		}
 		else {
-			client->setNickname(newNick);
+			client->setNickname(newNick); /// update channel invite list
 		}
 	}
 	else if (command.getCommand() == "JOIN")
@@ -362,6 +362,7 @@ void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command)
 	size_t end = channels.find(',');
 	size_t key_start = 0;
 	size_t key_end = keys.find(',');
+	bool is_invited = false;
 	while (start < channels.length())
 	{
 		std::string target;
@@ -406,11 +407,16 @@ void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command)
 		{
 			if (channel->isInviteOnly())
 			{
-				client->sendMessage("server 473: Can't join a channel (+i)\r\n");
-				continueLoopJoin(start, end, channels);
-				if (!keys.empty())
-					continueLoopJoin(key_start, key_end, keys);
-				continue;
+				// Check if the client is invited
+				if (!channel->isInvited(client))
+				{
+					client->sendMessage("server 473: Can't join a channel (+i)\r\n");
+					continueLoopJoin(start, end, channels);
+					if (!keys.empty())
+						continueLoopJoin(key_start, key_end, keys);
+					continue;
+				}
+				is_invited = true;
 			}
 			if (!channel->getKey().empty())
 			{
@@ -436,6 +442,8 @@ void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command)
 			channel->addOperator(client);
 		else
 			channel->addClient(client);
+		if (is_invited == true)
+			channel->removeInvited(client);
 		client->addChannel(target);
 		std::string formatted_msg = client->getNickname() + "!" + client->getUsername() + "@"
 									+ client->getHostname() + " JOIN " + target + "\r\n";
@@ -475,10 +483,14 @@ void ChannelsClientsManager::executeInvite(Client* client, IRCCommand& command)
 		client->sendMessage("server 443: This user is already in channel\r\n");
 		return;
 	}
+	// Add user to the invited list
+	channel->addInvited(target_user);
+
 	target_user->sendMessage(client->getNickname() + " invited you to this channel: "
 								+ channel->getName() + "\r\n");
 	client->sendMessage("You're successfully invited " + target_user->getNickname()
 						+ " to this channel " + channel->getName() + "\r\n");
+
 }
 
 void ChannelsClientsManager::executeTopic(Client* client, IRCCommand& command)
@@ -576,7 +588,7 @@ Client* ChannelsClientsManager::getClientByNickname(const std::string& target_ni
 	Client *target_user = NULL;
 	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
     {
-        if (it->second->getNickname() == target_nick)
+        if (it->second && it->second->getNickname() == target_nick)
         {
             target_user = it->second;
             break;
@@ -603,7 +615,7 @@ void ChannelsClientsManager::continueLoopJoin(size_t &start, size_t &end, const 
 
 void ChannelsClientsManager::Key_check()
 {
-	
+
 }
 
 

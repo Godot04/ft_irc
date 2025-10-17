@@ -11,12 +11,13 @@ class Channel {
 private:
     std::string                 _name;
     std::string                 _topic;
-    std::vector<Client*>        _clients;
-    std::vector<Client*>        _operators;
-        bool                        _isInviteOnly;
-        bool                        _topicProtected;
-        std::string                 _key; // password
-        size_t                      _userLimit;
+    std::vector<Client*>        _clients; // TODO clean when Clients are deleted
+    std::vector<Client*>        _operators; // TODO clean when Clients are deleted
+    std::vector<Client*>        _invited; // TODO clean when Clients are deleted
+    bool                        _isInviteOnly;
+    bool                        _topicProtected;
+    std::string                 _key; // password
+    size_t                      _userLimit;
 
     // Unique identifier for the channel (if needed)
     // std::uint64_t id_;
@@ -42,6 +43,9 @@ public:
     void                setUserLimit(size_t limit) { _userLimit = limit; }
     size_t              getUserLimit() const { return _userLimit; }
     const std::string&  getKey() const { return _key; }
+    void                addInvited(Client* client);
+    void                removeInvited(Client* client);
+    bool                isInvited(Client* client) const;
     // Getters & Setters
     const std::string&  getName() const;
     const std::string&  getTopic() const;

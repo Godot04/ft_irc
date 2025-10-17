@@ -17,7 +17,6 @@ private:
     std::vector<std::string> _channels;
     std::string         _buffer;
     time_t              _connectionTime; // set in seconds
-    
 
 public:
     Client(int fd);

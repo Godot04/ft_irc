@@ -1,7 +1,7 @@
 #include "../inc/ft_irc.hpp"
 
 Channel::Channel(const std::string& name)
-    : _name(name)
+    : _name(name), _topic(""), _isInviteOnly(false), _topicProtected(false), _key(""), _userLimit(0)
 {
 }
 
@@ -37,6 +37,16 @@ void Channel::removeClient(Client* client)
         if (*it == client)
         {
             _operators.erase(it);
+            break;
+        }
+    }
+
+    // Remove from invited list
+    for (std::vector<Client*>::iterator it = _invited.begin(); it != _invited.end(); ++it)
+    {
+        if (*it == client)
+        {
+            _invited.erase(it);
             break;
         }
     }
@@ -170,4 +180,39 @@ void Channel::setInviteOnly(bool status) {
 
 bool Channel::isInviteOnly() const {
     return _isInviteOnly;
+}
+
+void Channel::addInvited(Client* client)
+{
+    if (!client)
+        return;
+    if (isInvited(client))
+        return;
+    _invited.push_back(client);
+}
+
+void Channel::removeInvited(Client* client)
+{
+    if (!client)
+        return;
+    for (std::vector<Client*>::iterator it = _invited.begin(); it != _invited.end(); ++it)
+    {
+        if (*it == client)
+        {
+            _invited.erase(it);
+            break;
+        }
+    }
+}
+
+bool Channel::isInvited(Client* client) const
+{
+    if (!client)
+        return false;
+    for (std::vector<Client*>::const_iterator it = _invited.begin(); it != _invited.end(); ++it)
+    {
+        if (*it == client)
+            return true;
+    }
+    return false;
 }
