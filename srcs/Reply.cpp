@@ -47,4 +47,10 @@ void Reply::connectionClosed(const Client& client) {
     client.sendMessage("Connection closed\r\n");
 }
 
+void Reply::pongReply(const Client& client, const std::string& server) {
+    client.sendMessage("PONG " + server + "\r\n");
+}
 
+void Reply::pingToClient(const Client& client, const std::string& server) {
+    client.sendMessage("PING :" + server + "\r\n");
+}

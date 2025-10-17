@@ -56,6 +56,7 @@ private:
 	void							handleInviteCmd(std::istringstream &iss);
 	void							handleKickCmd(std::istringstream &iss);
 	void							handleTopicCmd(std::istringstream &iss);
+	void							handlePingCmd(std::istringstream &iss);
 	void							processCommand();
 	void							trimCRLF(std::string &str);
 public:

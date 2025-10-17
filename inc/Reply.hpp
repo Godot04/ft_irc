@@ -19,6 +19,8 @@ public:
 	static void nicknameInUse(const Client& client, const std::string& nickname);
 	static std::string noSuchNick(const std::string& target, const Client& client);
 	static void connectionClosed(const Client& client);
+	static void pongReply(const Client& client, const std::string& server);
+	static void pingToClient(const Client& client, const std::string& server);
 };
 
 #endif // REPLY_HPP

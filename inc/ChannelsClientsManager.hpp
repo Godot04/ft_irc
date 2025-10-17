@@ -10,7 +10,7 @@
 #include <map>
 #include <iostream>
 #include <poll.h>
-
+#include <unistd.h>
 
 
 // Yes, in the IRC protocol, if a client’s connection is not maintained (for example, due to network timeout, client disconnect, or socket error), the server removes the client from all channels and from the server itself.
@@ -24,7 +24,7 @@
 
 class ChannelsClientsManager {
 public:
-    ChannelsClientsManager();
+    ChannelsClientsManager(std::map<int, Client*> &clients, std::string const &password, std::vector<pollfd> &pollfds);
     ~ChannelsClientsManager();
 	void setClientsMap(std::map<int, Client*> *clients, std::string const *password, std::vector<pollfd> *pollfds);
 	void handleClientMessage(Client* client);
@@ -32,25 +32,29 @@ public:
     // void removeClientFromChannel(Client* client, Channel* channel);
     // std::vector<Client*> getClientsInChannel(Channel* channel);
 	Channel							*getChannel(std::string const &channelName); // if null, channel doesn't exit
-
+	int								getPollSize() const { return _pollfds.size(); }
+	int								getClientsSize() const { return _clients.size(); }
+	int								getChannelsSize() const { return _channels.size(); }
+	void							removeClient(Client &client);
+	void							sendPingToClient(Client* client);
 private:
     std::map<std::string, Channel*>	_channels;
-	std::map<int, Client*>			*_clients;
-	std::string const				*_password;
-	std::vector<pollfd>     		*_pollfds;
+	std::map<int, Client*>			&_clients;
+	std::string const				&_password;
+	std::vector<pollfd>     		&_pollfds;
 
 	// void							setNick(Client* client, IRCCommand& command);
 	// Registration
 	bool							isNickInUse(const std::string& nickname) const;
 	void							registerClient(Client* client, IRCCommand& command);
 	void							handleRegisteredClientMessage(Client* client, IRCCommand& command);
-
 	// Command execution
 	void							executePrivmsg(Client* client, IRCCommand& command);
 	void							executeJoin(Client* client, IRCCommand& command);
 	void							executeInvite(Client* client, IRCCommand& command);
 	void							executeTopic(Client* client, IRCCommand& command);
 	void							executeKick(Client* client, IRCCommand& command);
+	void							executePing(Client* client, IRCCommand& command);
 	// Helper functions
 	Client*							getClientByNickname(const std::string& nickname, Client* client);
 	void							continueLoopJoin(size_t &start, size_t &end, const std::string& channels);

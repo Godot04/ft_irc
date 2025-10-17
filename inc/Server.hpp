@@ -15,22 +15,22 @@
 #include <IRCCommand.hpp>
 #include <ChannelsClientsManager.hpp>
 
-# define PRINT_CLIENT_INFO 1
+# define PRINT_CLIENT_INFO 0
 
 class Client;
 class Channel;
 
 class Server {
 private:
-    int                     _socket;
-    int                     _port;
-    std::string             _password;
-    struct sockaddr_in      _address;
-    std::vector<pollfd>     _pollfds;  // pfd | plfd | plfd ....xpfd   (push_back(xpfd))
-    std::map<int, Client*>  _clients;    // key - value pair.  key should be unique. 12 - popov 13 - khojazo   (_clients.at(12) - returns popov
+    int                             _socket;
+    int                             _port;
+    std::string                     _password;
+    struct sockaddr_in              _address;
+    std::vector<pollfd>             _pollfds;  // pfd | plfd | plfd ....xpfd   (push_back(xpfd))
+    std::map<int, Client*>          _clients;    // key - value pair.  key should be unique. 12 - popov 13 - khojazo   (_clients.at(12) - returns popov
     std::map<std::string, Channel*> _channels; // next step is to make it possible for clients to create channels
-    ChannelsClientsManager   _manager;
-    time_t              _clientTimeToLive; // in seconds
+    time_t                          _clientTimeToLive; // in seconds
+    ChannelsClientsManager          _manager;
 public:
     Server(int port, const std::string& password, time_t clientTimeToLive);
     ~Server();
@@ -47,7 +47,7 @@ public:
     void    handleCAP(Client* client, std::istringstream& iss);
     bool    handleOperatorCommand(Client* client, std::istringstream& iss);
     bool    processKick(Client* client, std::istringstream& iss);
-
+    
     // Getters
     std::map<int, Client*>&              getClients();
     std::map<std::string, Channel*>&     getChannels();

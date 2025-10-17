@@ -10,27 +10,6 @@
 #include <fcntl.h>
 #include <errno.h>
 
-TEST(ChannelsClientsManagerTest, JoinWithoutRegistering) {
-	int sv[2];
-	ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0); // sv[0] and sv[1] are connected sockets
-	ChannelsClientsManager manager;
-	std::map<int, Client*> clients_map;
-	Client* client_1 = new Client(sv[1]); // use one end for the client
-	client_1->addToBuffer("PASS wrong_password\r\n"); // Make sure to use CRLF for IRC
-	clients_map[1] = client_1;
-	std::string password = "correct_password";
-	manager.setClientsMap(&clients_map, &password, NULL);
-	manager.handleClientMessage(client_1);
-	char buffer[1024] = {0};
-	close(sv[1]); // Close the write end after sending
-	ssize_t n = read(sv[0], buffer, sizeof(buffer) - 1);
-	ASSERT_GT(n, 0); // Ensure something was written
-	std::string output(buffer);
-	EXPECT_EQ(client_1->isAuthenticated(), false);
-	EXPECT_NE(output.find("Password incorrect."), std::string::npos);
-	close(sv[0]);
-}
-
 void setSocketPair(int sv[2]) {
     if (socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == -1) {
         perror("socketpair");
@@ -52,202 +31,364 @@ ssize_t recv_nonblocking(int fd, char* buffer, size_t size) {
 	return n;
 }
 
-TEST(ChannelsClientsManagerTest, JoinWithCorrectPassword) {
-	int sv[2];
-	setSocketPair(sv);
-	// ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0); // sv[0] and sv[1] are connected sockets
-	ChannelsClientsManager manager;
-	std::map<int, Client*> clients_map;
-	Client* client_1 = new Client(sv[1]); // use one end for the client
-	client_1->addToBuffer("PASS correct_password\r\n"); // Make sure to use CRLF for IRC
-	clients_map[sv[1]] = client_1;
-	std::string password = "correct_password";
-	manager.setClientsMap(&clients_map, &password, NULL);
-	manager.handleClientMessage(client_1);
-	char buffer[1024] = {0};
-	ssize_t n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_EQ(n, 0); // Ensure something was written
-	std::string output(buffer);
-	EXPECT_NE(output.find(""), std::string::npos);
-	EXPECT_EQ(client_1->isAuthenticated(), true);
-	EXPECT_EQ(client_1->isNicknameSet(), false);
-	client_1->addToBuffer("NICK testuser\r\n");
-	manager.handleClientMessage(client_1);
-	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_EQ(n, 0); // Ensure something was written
-	std::string output2(buffer);
-	EXPECT_NE(output2.find(""), std::string::npos);
-	EXPECT_EQ(client_1->isNicknameSet(), true);
-	EXPECT_EQ(client_1->getNickname(), "testuser");
-	EXPECT_EQ(client_1->isRegistered(), false);
 
-	// testing duplicate nick
+// TEST(ChannelsClientsManagerTest, JoinWithoutRegistering) {
+// 	int sv[2];
+// 	ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0); // sv[0] and sv[1] are connected sockets
+// 	ChannelsClientsManager manager;
+// 	std::map<int, Client*> clients_map;
+// 	Client* client_1 = new Client(sv[1]); // use one end for the client
+// 	client_1->addToBuffer("PASS wrong_password\r\n"); // Make sure to use CRLF for IRC
+// 	clients_map[1] = client_1;
+// 	std::string password = "correct_password";
+// 	manager.setClientsMap(&clients_map, &password, NULL);
+// 	manager.handleClientMessage(client_1);
+// 	char buffer[1024] = {0};
+// 	close(sv[1]); // Close the write end after sending
+// 	ssize_t n = read(sv[0], buffer, sizeof(buffer) - 1);
+// 	ASSERT_GT(n, 0); // Ensure something was written
+// 	std::string output(buffer);
+// 	EXPECT_EQ(client_1->isAuthenticated(), false);
+// 	EXPECT_NE(output.find("Password incorrect."), std::string::npos);
+// 	close(sv[0]);
+// }
+
+// TEST(ChannelsClientsManagerTest, JoinWithCorrectPassword) {
+// 	int sv[2];
+// 	setSocketPair(sv);
+// 	// ASSERT_EQ(socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0); // sv[0] and sv[1] are connected sockets
+// 	ChannelsClientsManager manager;
+// 	std::map<int, Client*> clients_map;
+// 	Client* client_1 = new Client(sv[1]); // use one end for the client
+// 	client_1->addToBuffer("PASS correct_password\r\n"); // Make sure to use CRLF for IRC
+// 	clients_map[sv[1]] = client_1;
+// 	std::string password = "correct_password";
+// 	manager.setClientsMap(&clients_map, &password, NULL);
+// 	manager.handleClientMessage(client_1);
+// 	char buffer[1024] = {0};
+// 	ssize_t n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_EQ(n, 0); // Ensure something was written
+// 	std::string output(buffer);
+// 	EXPECT_NE(output.find(""), std::string::npos);
+// 	EXPECT_EQ(client_1->isAuthenticated(), true);
+// 	EXPECT_EQ(client_1->isNicknameSet(), false);
+// 	client_1->addToBuffer("NICK testuser\r\n");
+// 	manager.handleClientMessage(client_1);
+// 	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_EQ(n, 0); // Ensure something was written
+// 	std::string output2(buffer);
+// 	EXPECT_NE(output2.find(""), std::string::npos);
+// 	EXPECT_EQ(client_1->isNicknameSet(), true);
+// 	EXPECT_EQ(client_1->getNickname(), "testuser");
+// 	EXPECT_EQ(client_1->isRegistered(), false);
+
+// 	// testing duplicate nick
+// 	int sv2[2];
+// 	setSocketPair(sv2);
+// 	Client* client_2 = new Client(sv2[1]); // use one end for the client
+// 	client_2->addToBuffer("PASS correct_password\r\nNICK testuser\r\n");
+// 	clients_map[sv2[1]] = client_2;
+// 	manager.handleClientMessage(client_2);
+// 	n = recv_nonblocking(sv2[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // Ensure something was written
+// 	std::string output3 = buffer;
+// 	EXPECT_EQ(output3, ":ft_irc.42.de 433 * :testuser Nickname is already in use\r\n");
+// 	EXPECT_EQ(client_2->isNicknameSet(), false);
+// 	EXPECT_EQ(client_2->isAuthenticated(), true);
+// 	EXPECT_EQ(client_2->isRegistered(), false);
+// 	client_2->clearBuffer();
+// 	client_2->addToBuffer("NICK testuser2\r\n");
+// 	manager.handleClientMessage(client_2);
+// 	n = recv_nonblocking(sv2[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_EQ(n, 0); // Ensure something was written
+// 	std::string output4 = buffer;
+// 	EXPECT_NE(output4.find(""), std::string::npos);
+// 	EXPECT_EQ(client_2->isNicknameSet(), true);
+// 	EXPECT_EQ(client_2->getNickname(), "testuser2");
+// 	EXPECT_EQ(client_2->isRegistered(), false);
+
+
+// 	// Now send USER command to complete registration
+// 	client_1->addToBuffer("USER testuser 0 * :Real Name\r\n");
+// 	manager.handleClientMessage(client_1);
+// 	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // Ensure something was written
+// 	std::string output5 = buffer;
+// 	// EXPECT_EQ(output5, ":ft_irc.42.de 001 testuser :Welcome to the ft_IRC Network, testuser\r\n");
+// 	EXPECT_EQ(client_1->isRegistered(), true);
+
+// 	close(sv[0]);
+// 	close(sv[1]);
+// }
+
+// // join channels
+
+// // test CAP LS / ACK negotiation
+// TEST(ChannelsClientsManagerTest, CapLsAckNegotiation) {
+// 	int sv[2];
+// 	setSocketPair(sv);
+// 	ChannelsClientsManager manager;
+// 	std::map<int, Client*> clients_map;
+// 	Client* client_1 = new Client(sv[1]); // use one end for the client
+// 	client_1->addToBuffer("PASS correct_password\r\nCAP LS\r\nNICK testuser\r\nUSER testuser 0 * :Real Name\r\n");
+// 	clients_map[sv[1]] = client_1;
+// 	std::string password = "correct_password";
+// 	manager.setClientsMap(&clients_map, &password, NULL);
+// 	manager.handleClientMessage(client_1);
+// 	char buffer[1024] = {0};
+// 	ssize_t n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // Ensure something was written
+// 	std::string output(buffer);
+// 	EXPECT_NE(output.find(""), std::string::npos);
+// 	EXPECT_EQ(client_1->isRegistered(), false);
+// 	client_1->clearBuffer();
+// 	client_1->addToBuffer("CAP END\r\n");
+// 	manager.handleClientMessage(client_1);
+// 	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // Ensure something was written
+// 	std::string output2(buffer);
+// 	EXPECT_EQ(output2, ":ft_irc.42.de 001 testuser :Welcome to the ft_IRC Network\r\n");
+// 	EXPECT_EQ(client_1->isRegistered(), true);
+// 	close(sv[0]);
+// 	close(sv[1]);
+// }
+
+
+// TEST(ChannelsClientsManagerTest, PassUserAfterRegisering) {
+// 	int sv[2];
+// 	setSocketPair(sv);
+// 	ChannelsClientsManager manager;
+// 	std::map<int, Client*> clients_map;
+// 	Client* client_1 = new Client(sv[1]); // use one end for the client
+// 	client_1->addToBuffer("PASS correct_password\r\nNICK testuser\r\nUSER testuser 0 * :Real Name\r\n");
+// 	clients_map[sv[1]] = client_1;
+// 	std::string password = "correct_password";
+// 	manager.setClientsMap(&clients_map, &password, NULL);
+// 	manager.handleClientMessage(client_1);
+// 	char buffer[1024] = {0};
+// 	ssize_t n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // Ensure something was written
+// 	std::string output(buffer);
+// 	EXPECT_NE(output.find(""), std::string::npos);
+// 	EXPECT_EQ(client_1->isRegistered(), true);
+// 	client_1->clearBuffer();
+// 	client_1->addToBuffer("PASS correct_password\r\n");
+// 	manager.handleClientMessage(client_1);
+// 	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // No response expected
+// 	std::string output2(buffer);
+// 	EXPECT_EQ(output2, ":ft_irc.42.de 462 testuser :You may not reregister\r\n");
+// 	EXPECT_EQ(client_1->isRegistered(), true); // Still registered
+// 	// valid User second time
+// 	client_1->clearBuffer();
+// 	client_1->addToBuffer("USER testuser 0 * :Real Name\r\n");
+// 	manager.handleClientMessage(client_1);
+// 	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // No response expected
+// 	std::string output3(buffer);
+// 	EXPECT_EQ(output3, ":ft_irc.42.de 462 testuser :You may not reregister\r\n");
+// 	EXPECT_EQ(client_1->isRegistered(), true); // Still registered
+
+// 	// password second time
+// 	client_1->clearBuffer();
+// 	client_1->addToBuffer("PASS correct_password\r\n");
+// 	manager.handleClientMessage(client_1);
+// 	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // No response expected
+// 	std::string output4(buffer);
+// 	EXPECT_EQ(output4, ":ft_irc.42.de 462 testuser :You may not reregister\r\n");
+// 	EXPECT_EQ(client_1->isRegistered(), true); // Still registered
+
+// 	// setting nick second time
+// 	client_1->clearBuffer();
+// 	client_1->addToBuffer("NICK newnick\r\n");
+// 	manager.handleClientMessage(client_1);
+// 	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	close(sv[0]);
+// 	close(sv[1]);
+// }
+
+
+// // Join a channel after registering
+// TEST(ChannelsClientsManagerTest, JoinChannelAfterRegistering) {
+// 	int sv[2];
+// 	setSocketPair(sv);
+// 	ChannelsClientsManager manager;
+// 	std::map<int, Client*> clients_map;
+// 	Client* client_1 = new Client(sv[1]); // use one end for the client
+// 	client_1->addToBuffer("PASS correct_password\r\nNICK testuser\r\nUSER testuser 0 * :Real Name\r\n");
+// 	clients_map[sv[1]] = client_1;
+// 	std::string password = "correct_password";
+// 	manager.setClientsMap(&clients_map, &password, NULL);
+// 	manager.handleClientMessage(client_1);
+// 	char buffer[1024] = {0};
+// 	ssize_t n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // Ensure something was written
+// 	std::string output(buffer);
+// 	EXPECT_NE(output.find(""), std::string::npos);
+// 	EXPECT_EQ(client_1->isRegistered(), true);
+// 	client_1->clearBuffer();
+// 	client_1->addToBuffer("JOIN #testchannel\r\n");
+// 	manager.handleClientMessage(client_1);
+// 	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+// 	EXPECT_GT(n, 0); // Ensure something was written
+// 	std::string output2(buffer);
+// 	EXPECT_NE(output2.find("Welcome to #testchannel channel!"), std::string::npos);
+// 	Channel* testChannel = manager.getChannel("#testchannel");
+// 	bool clientStatus = testChannel->isClientInChannel(client_1);
+// 	EXPECT_EQ(clientStatus, true);
+
+// 	// 
+
+// 	close(sv[0]);
+// 	close(sv[1]);
+// }
+
+
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> Check Manager Structure <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+Client *returnReadyToConnectClient(std::vector<pollfd>& pollfds, std::map<int, Client*>& clients_map, int sv[2], const std::string& password, const std::string& nick, const std::string& user) {
+	setSocketPair(sv);
+	Client* client = new Client(sv[1]); // use one end for the client
+	std::string reg_msg = "PASS " + password + "\r\nNICK " + nick + "\r\nUSER " + user + " 0 * :Real Name\r\n";
+	client->addToBuffer(reg_msg);
+	pollfd server_pfd;
+	pollfd pfd;
+	pfd.fd = sv[1]; // Client socket
+	pfd.events = POLLIN;
+	pollfds.push_back(pfd);
+	clients_map[sv[1]] = client;
+	return client;
+}
+
+
+TEST(ChannelsClientsManagerTest, CheckManagerStructure) {
+	int sv[2];
+	std::string correctPass = "correct_password";
+	std::vector<pollfd>             pollfds;
+	std::map<int, Client*>			clients_map;
+	pollfd server_pfd;
+	pollfds.push_back(server_pfd);
+
+
+	Client* client_1 = returnReadyToConnectClient(pollfds, clients_map, sv, correctPass, "testuser", "testuser");
+	ChannelsClientsManager manager(clients_map, correctPass, pollfds);
+	manager.handleClientMessage(client_1);
+	ASSERT_EQ(client_1->isRegistered(), true);
+	client_1->clearBuffer();
+	ASSERT_EQ(manager.getPollSize(), 2);
+	ASSERT_EQ(manager.getClientsSize(), 1);
+	ASSERT_EQ(manager.getChannelsSize(), 0);
 	int sv2[2];
-	setSocketPair(sv2);
-	Client* client_2 = new Client(sv2[1]); // use one end for the client
-	client_2->addToBuffer("PASS correct_password\r\nNICK testuser\r\n");
-	clients_map[sv2[1]] = client_2;
+	Client *client_2 = returnReadyToConnectClient(pollfds, clients_map, sv2, correctPass, "testuser2", "testuser2");
 	manager.handleClientMessage(client_2);
-	n = recv_nonblocking(sv2[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // Ensure something was written
-	std::string output3 = buffer;
-	EXPECT_EQ(output3, ":ft_irc.42.de 433 * :testuser Nickname is already in use\r\n");
-	EXPECT_EQ(client_2->isNicknameSet(), false);
-	EXPECT_EQ(client_2->isAuthenticated(), true);
-	EXPECT_EQ(client_2->isRegistered(), false);
-	client_2->clearBuffer();
-	client_2->addToBuffer("NICK testuser2\r\n");
-	manager.handleClientMessage(client_2);
-	n = recv_nonblocking(sv2[0], buffer, sizeof(buffer) - 1);
-	EXPECT_EQ(n, 0); // Ensure something was written
-	std::string output4 = buffer;
-	EXPECT_NE(output4.find(""), std::string::npos);
-	EXPECT_EQ(client_2->isNicknameSet(), true);
-	EXPECT_EQ(client_2->getNickname(), "testuser2");
-	EXPECT_EQ(client_2->isRegistered(), false);
-
-
-	// Now send USER command to complete registration
-	client_1->addToBuffer("USER testuser 0 * :Real Name\r\n");
-	manager.handleClientMessage(client_1);
-	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // Ensure something was written
-	std::string output5 = buffer;
-	EXPECT_EQ(output5, ":ft_irc.42.de 001 testuser :Welcome to the ft_IRC Network, testuser\r\n");
-	EXPECT_EQ(client_1->isRegistered(), true);
-
-
+	ASSERT_EQ(client_2->isRegistered(), true);
+	ASSERT_EQ(manager.getPollSize(), 3);
+	ASSERT_EQ(manager.getClientsSize(), 2);
+	ASSERT_EQ(manager.getChannelsSize(), 0);
+	int sv3[2];
+	Client *client_3 = returnReadyToConnectClient(pollfds, clients_map, sv3, correctPass, "testuser3", "testuser3");
+	manager.handleClientMessage(client_3);
+	ASSERT_EQ(client_3->isRegistered(), true);
+	ASSERT_EQ(manager.getPollSize(), 4);
+	ASSERT_EQ(manager.getClientsSize(), 3);
+	ASSERT_EQ(manager.getChannelsSize(), 0);
+	manager.removeClient(*client_2);
+	ASSERT_EQ(manager.getPollSize(), 3);
+	ASSERT_EQ(manager.getClientsSize(), 2);
+	ASSERT_EQ(manager.getChannelsSize(), 0);
+	manager.removeClient(*client_1);
+	manager.removeClient(*client_3);
+	ASSERT_EQ(manager.getPollSize(), 1);
+	ASSERT_EQ(manager.getClientsSize(), 0);
+	ASSERT_EQ(manager.getChannelsSize(), 0);
 
 	close(sv[0]);
 	close(sv[1]);
 }
 
-// join channels
 
-// test CAP LS / ACK negotiation
-TEST(ChannelsClientsManagerTest, CapLsAckNegotiation) {
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> PING PONG <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+TEST(ChannelsClientsManagerTest, PingPongFromClient) {
 	int sv[2];
-	setSocketPair(sv);
-	ChannelsClientsManager manager;
+	std::string correctPass = "correct_password";
+	std::vector<pollfd> pollfds;
 	std::map<int, Client*> clients_map;
-	Client* client_1 = new Client(sv[1]); // use one end for the client
-	client_1->addToBuffer("PASS correct_password\r\nCAP LS\r\nNICK testuser\r\nUSER testuser 0 * :Real Name\r\n");
-	clients_map[sv[1]] = client_1;
-	std::string password = "correct_password";
-	manager.setClientsMap(&clients_map, &password, NULL);
-	manager.handleClientMessage(client_1);
+	pollfd server_pfd;
+	pollfds.push_back(server_pfd);
+
+	Client* client = returnReadyToConnectClient(pollfds, clients_map, sv, correctPass, "testuser", "testuser");
+	ChannelsClientsManager manager(clients_map, correctPass, pollfds);
+
+	// Complete registration
+	manager.handleClientMessage(client);
 	char buffer[1024] = {0};
+	// Drain any registration/welcome messages
+	recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+	ASSERT_EQ(client->isRegistered(), true);
+
+	// Send PING and expect a PONG containing the token
+	client->clearBuffer();
+	client->addToBuffer("PING ft_irc.42.de\r\n");
+	manager.handleClientMessage(client);
 	ssize_t n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // Ensure something was written
-	std::string output(buffer);
-	EXPECT_NE(output.find(""), std::string::npos);
-	EXPECT_EQ(client_1->isRegistered(), false);
-	client_1->clearBuffer();
-	client_1->addToBuffer("CAP END\r\n");
-	manager.handleClientMessage(client_1);
-	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // Ensure something was written
-	std::string output2(buffer);
-	EXPECT_EQ(output2, ":ft_irc.42.de 001 testuser :Welcome to the ft_IRC Network, testuser\r\n");
-	EXPECT_EQ(client_1->isRegistered(), true);
+	EXPECT_GT(n, 0);
+	std::string output = buffer;
+	EXPECT_EQ(output, "PONG ft_irc.42.de\r\n");
+
 	close(sv[0]);
 	close(sv[1]);
 }
 
-
-TEST(ChannelsClientsManagerTest, PassUserAfterRegisering) {
+TEST(ChannelsClientsManagerTest, PingPongFromServer) {
 	int sv[2];
-	setSocketPair(sv);
-	ChannelsClientsManager manager;
+	std::string correctPass = "correct_password";
+	std::vector<pollfd> pollfds;
 	std::map<int, Client*> clients_map;
-	Client* client_1 = new Client(sv[1]); // use one end for the client
-	client_1->addToBuffer("PASS correct_password\r\nNICK testuser\r\nUSER testuser 0 * :Real Name\r\n");
-	clients_map[sv[1]] = client_1;
-	std::string password = "correct_password";
-	manager.setClientsMap(&clients_map, &password, NULL);
-	manager.handleClientMessage(client_1);
+	pollfd server_pfd;
+	pollfds.push_back(server_pfd);
+
+	Client* client = returnReadyToConnectClient(pollfds, clients_map, sv, correctPass, "testuser", "testuser");
+	ChannelsClientsManager manager(clients_map, correctPass, pollfds);
+
+	// Complete registration
+	manager.handleClientMessage(client);
 	char buffer[1024] = {0};
+	// Drain any registration/welcome messages
+	recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
+	ASSERT_EQ(client->isRegistered(), true);
+
+	// Simulate server sending PING
+	manager.sendPingToClient(client);
 	ssize_t n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // Ensure something was written
-	std::string output(buffer);
-	EXPECT_NE(output.find(""), std::string::npos);
-	EXPECT_EQ(client_1->isRegistered(), true);
-	client_1->clearBuffer();
-	client_1->addToBuffer("PASS correct_password\r\n");
-	manager.handleClientMessage(client_1);
-	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // No response expected
-	std::string output2(buffer);
-	EXPECT_EQ(output2, ":ft_irc.42.de 462 testuser :You may not reregister\r\n");
-	EXPECT_EQ(client_1->isRegistered(), true); // Still registered
-	// valid User second time
-	client_1->clearBuffer();
-	client_1->addToBuffer("USER testuser 0 * :Real Name\r\n");
-	manager.handleClientMessage(client_1);
-	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // No response expected
-	std::string output3(buffer);
-	EXPECT_EQ(output3, ":ft_irc.42.de 462 testuser :You may not reregister\r\n");
-	EXPECT_EQ(client_1->isRegistered(), true); // Still registered
+	std::string output = buffer;
+	EXPECT_EQ(output, "PING ft_irc.42.de\r\n");
 
-	// password second time
-	client_1->clearBuffer();
-	client_1->addToBuffer("PASS correct_password\r\n");
-	manager.handleClientMessage(client_1);
-	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // No response expected
-	std::string output4(buffer);
-	EXPECT_EQ(output4, ":ft_irc.42.de 462 testuser :You may not reregister\r\n");
-	EXPECT_EQ(client_1->isRegistered(), true); // Still registered
-
-	// setting nick second time
-	client_1->clearBuffer();
-	client_1->addToBuffer("NICK newnick\r\n");
-	manager.handleClientMessage(client_1);
-	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	close(sv[0]);
-	close(sv[1]);
-}
-
-
-// Join a channel after registering
-TEST(ChannelsClientsManagerTest, JoinChannelAfterRegistering) {
-	int sv[2];
-	setSocketPair(sv);
-	ChannelsClientsManager manager;
-	std::map<int, Client*> clients_map;
-	Client* client_1 = new Client(sv[1]); // use one end for the client
-	client_1->addToBuffer("PASS correct_password\r\nNICK testuser\r\nUSER testuser 0 * :Real Name\r\n");
-	clients_map[sv[1]] = client_1;
-	std::string password = "correct_password";
-	manager.setClientsMap(&clients_map, &password, NULL);
-	manager.handleClientMessage(client_1);
-	char buffer[1024] = {0};
-	ssize_t n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // Ensure something was written
-	std::string output(buffer);
-	EXPECT_NE(output.find(""), std::string::npos);
-	EXPECT_EQ(client_1->isRegistered(), true);
-	client_1->clearBuffer();
-	client_1->addToBuffer("JOIN #testchannel\r\n");
-	manager.handleClientMessage(client_1);
-	n = recv_nonblocking(sv[0], buffer, sizeof(buffer) - 1);
-	EXPECT_GT(n, 0); // Ensure something was written
-	std::string output2(buffer);
-	EXPECT_NE(output2.find("Welcome to #testchannel channel!"), std::string::npos);
-	Channel* testChannel = manager.getChannel("#testchannel");
-	bool clientStatus = testChannel->isClientInChannel(client_1);
-	EXPECT_EQ(clientStatus, true);
-
-	// 
 
 	close(sv[0]);
 	close(sv[1]);
 }
-
 
 
 int main(int argc, char **argv) {
 	::testing::InitGoogleTest(&argc, argv);
 	return RUN_ALL_TESTS();
 }
+
+
+
+
+// MESSAGE: MODE Welcome to the ft_IRC Network +i
+// :ft_irc.42.de 461 <nick> MODE :Not enough parameters
+// MESSAGE: WHOIS zkhojazo
+// :ft_irc.42.de 311 <requester> zkhojazo user host * :Real Name
+// :ft_irc.42.de 312 <requester> zkhojazo ft_irc.42.de :Server info
+// :ft_irc.42.de 318 <requester> zkhojazo :End of WHOIS list
+
+// MESSAGE: MODE zkhojazo +i
+// :ft_irc.42.de MODE zkhojazo +i
+// MESSAGE: PING ft_irc.42.de

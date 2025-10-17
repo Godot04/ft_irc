@@ -48,7 +48,7 @@ test_clean:
 
 re: fclean all
 
-run_server:
+run_server: re
 	./ft_irc_serv 1201 123
 
 clone_google_test:
