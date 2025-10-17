@@ -76,6 +76,42 @@ void IRCCommand::handleParameters(std::istringstream &iss) {
         handleKickCmd(iss);
     else if (_cmd == "TOPIC")
         handleTopicCmd(iss);
+    else if (_cmd == "PING" || _cmd == "PONG")
+        handlePingCmd(iss);
+}
+
+void IRCCommand::handlePingCmd(std::istringstream &iss) {
+    std::string server;
+    iss >> server; // extract server parameter
+
+    if (server.empty()) {
+        _isValid = false;
+        _errorNum = ERR_NEEDMOREPARAMS;
+        return;
+    }
+    if (server[0] == ':' && server.length() <= 1) {
+        _isValid = false;
+        _errorNum = ERR_NEEDMOREPARAMS;
+        _params.push_back(server);
+    }
+    else {
+        trimCRLF(server);
+        _params.push_back(server);
+        _isValid = true;
+    }
+    // Check for extra parameters
+    std::string extra;
+    if (iss >> extra) {
+        _isValid = false;
+        _errorNum = ERR_NEEDMOREPARAMS;
+        // Add the extra parameters to params for completeness
+        trimCRLF(extra);
+        _params.push_back(extra);
+        while (iss >> extra) {
+            trimCRLF(extra);
+            _params.push_back(extra);
+        }
+    }
 }
 
 void IRCCommand::handleJoinCmd(std::istringstream &iss) {
@@ -474,4 +510,15 @@ bool IRCCommand::isFlagSetValid(std::string const &flags) const {
         }
     }
     return true;
+}
+
+std::string IRCCommand::getParamAt(size_t index) const {
+    if (index < _params.size()) {
+        return _params[index];
+    }
+    return "";
+}
+
+size_t IRCCommand::getParamsCount() const {
+    return _params.size();
 }

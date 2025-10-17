@@ -1,16 +1,18 @@
 #include <ChannelsClientsManager.hpp>
 
 
-ChannelsClientsManager::ChannelsClientsManager() {}
+ChannelsClientsManager::ChannelsClientsManager(std::map<int, Client*> &clients, std::string const &password, std::vector<pollfd> &pollfds)
+	: _clients(clients), _password(password), _pollfds(pollfds)
+{}
 
 ChannelsClientsManager::~ChannelsClientsManager() {}
 
 
-void ChannelsClientsManager::setClientsMap(std::map<int, Client*> *clients, std::string const *password, std::vector<pollfd> *pollfds) {
-	_clients = clients;
-	_password = password;
-	_pollfds = pollfds;
-}
+// void ChannelsClientsManager::setClientsMap(std::map<int, Client*> *clients, std::string const *password, std::vector<pollfd> *pollfds) {
+// 	// _clients. clients;
+// 	// _password = password;
+// 	// _pollfds = pollfds;
+// }
 
 void ChannelsClientsManager::handleClientMessage(Client* client) {
 	// Parse the client's message from its buffer
@@ -18,6 +20,7 @@ void ChannelsClientsManager::handleClientMessage(Client* client) {
 
 	for (std::string message = client->getNextMessage(); !message.empty(); message = client->getNextMessage())
 	{
+		// std::cout << "MESSAGE: "<< message << std::endl;
 		message += "\r\n"; // Add CRLF back for parsing
 		IRCCommand command(message);
 		if (!command.isValid()) {
@@ -25,6 +28,7 @@ void ChannelsClientsManager::handleClientMessage(Client* client) {
 			return;
 		}
 		else {
+			client->updateConnectionTime();
 			if (!client->isRegistered()) {
 				registerClient(client, command);
 			}
@@ -42,13 +46,13 @@ void ChannelsClientsManager::handleRegisteredClientMessage(Client* client, IRCCo
 		Reply::alreadyRegistered(*client);
 	else if (command.getCommand() == "NICK")
 	{
-		// std::string newNick = command.getParams().at(0);
-		// if (isNickInUse(newNick)) {
-		// 	Reply::nicknameInUse(*client, newNick);
-		// }
-		// else {
-		// 	client->setNickname(newNick);
-		// }
+		std::string newNick = command.getParams().at(0);
+		if (isNickInUse(newNick)) {
+			Reply::nicknameInUse(*client, newNick);
+		}
+		else {
+			client->setNickname(newNick);
+		}
 	}
 	else if (command.getCommand() == "JOIN")
 		executeJoin(client, command);
@@ -60,14 +64,153 @@ void ChannelsClientsManager::handleRegisteredClientMessage(Client* client, IRCCo
 		executeTopic(client, command);
 	else if (command.getCommand() == "KICK")
 		executeKick(client, command);
+	else if (command.getCommand() == "PING") {
+		executePing(client, command);
+	}
+	else if (command.getCommand() == "PONG") {
+		// Just update the connection time
+		client->updateConnectionTime();
+	}
+	else if (command.getCommand() == "MODE") {
+		executeMode(client, command);
+	}
 	else
 		Reply::unknownCommand(*client, command.getCommand());
 }
 
+void ChannelsClientsManager::executeMode(Client* client, IRCCommand& command) {
+	std::string targetChannel = command.getParamAt(0);
+	if (targetChannel[0] == '#' || targetChannel[0] == '&') {
+		if (_channels.find(targetChannel) == _channels.end()) {
+			Reply::noSuchChannel(*client, targetChannel);
+			return;
+		}
+		Channel *channel = _channels[targetChannel];
+		if (!channel->isOperator(client)) {
+			Reply::notOperator(*client, targetChannel);
+			return;
+		}
+		handleModeFlags(*client, *channel, command);
+		// if (command.get)
+		// channel->broadcast(":" + client->getNickname() + " MODE " + target + "\r\n", client);
+		// channel->setInviteOnly(true);
+		// if (command.getParamsCount() == 1) {
+		// 	// Just return the current modes
+		// 	std::string modes = channel->getModesString();
+		// 	client->sendMessage(":" + SERVER_NAME + " 324 " + client->getNickname() + " " + target + " :" + modes + "\r\n");
+		// 	return;
+		// }
+		// std::string modeChanges = params[1];
+		// std::string modeParams = (command.getParamsCount() > 2) ? params[2] : "";
+		// channel->changeModes(client, modeChanges, modeParams);
+	}
+}
+
+void ChannelsClientsManager::handleModeFlags(Client &client, Channel &channel, IRCCommand& command) {
+	std::string modeChanges = command.getParamAt(1);
+	// std::string modeParams = (command.getParamsCount() > 2) ? command.getParamAt(2) : "";
+	std::vector<std::string> modeParams;
+	std::string modeParamsString;
+	for (size_t i = 2; i < command.getParamsCount(); ++i) {
+		modeParams.push_back(command.getParamAt(i));
+		modeParamsString += " " + command.getParamAt(i);
+	}
+	ModeSign currentSign = NONE;
+	size_t paramIndex = 0;
+	// 0 -> channel, 1 -> modeChanges, 2 -> modeParams
+	for (size_t i = 0; i < modeChanges.length(); ++i) {
+		char c = modeChanges[i];
+		if (c == '+') {
+			currentSign = PLUS;
+		} else if (c == '-') {
+			currentSign = MINUS;
+		} else {
+			ModeFlag flag = IRCCommand::charToModeFlag(c);
+			switch (flag) {
+				case MODE_INVITE:
+					if (currentSign == PLUS) {
+						channel.setInviteOnly(true);
+					} else if (currentSign == MINUS) {
+						channel.setInviteOnly(false);
+					}
+					break;
+				case MODE_TOPIC:
+					if (currentSign == PLUS) {
+						channel.setTopicProtected(true);
+					} else if (currentSign == MINUS) {
+						channel.setTopicProtected(false);
+					}
+					break;
+				case MODE_KEY: {
+					if (paramIndex >= modeParams.size()) {
+                        client.sendMessage(":" + std::string(SERVER_NAME) + " 461 " + client.getNickname() + " MODE :Not enough parameters\r\n");
+                        break;
+                    }
+					std::string key = modeParams[paramIndex];
+					channel.setKey(key);
+					paramIndex++;
+					break;
+				}
+				case MODE_LIMIT_USER: {
+					if (paramIndex >= modeParams.size()) {
+						client.sendMessage(":" + std::string(SERVER_NAME) + " 461 " + client.getNickname() + " MODE :Not enough parameters\r\n");
+						break;
+					}
+					size_t limit = static_cast<size_t>(atoi(modeParams[paramIndex].c_str()));
+					channel.setUserLimit(limit);
+					paramIndex++;
+					break;
+				}
+				case MODE_OPERATOR: {
+					if (paramIndex >= modeParams.size()) {
+						client.sendMessage(":" + std::string(SERVER_NAME) + " 461 " + client.getNickname() + " MODE :Not enough parameters\r\n");
+						break;
+					}
+					std::string target = modeParams[paramIndex];
+					if (currentSign == MINUS) {
+						// Remove operator
+						Client* targetClient = getClientByNickname(target, &client);
+						if (targetClient && channel.isClientInChannel(targetClient)) {
+							channel.removeOperator(targetClient);
+							// channel.broadcast(":" + client.getNickname() + " MODE " + channel.getName() + " -o " + target + "\r\n", &client);
+						} else {
+							Reply::usersDontMatch(client);
+						}
+					}
+					else if (currentSign == PLUS) {
+						// Add operator
+						Client* targetClient = getClientByNickname(target, &client);
+						if (!targetClient || !channel.isClientInChannel(targetClient)) {
+							Reply::usersDontMatch(client);
+							break;
+						}
+						channel.addOperator(targetClient);
+						// channel.broadcast(":" + client.getNickname() + " MODE " + channel.getName() + " +o " + target + "\r\n", &client);
+					}
+					paramIndex++;
+					break;
+				}
+				default:
+					Reply::unknownCommand(client, "MODE");
+					// client.sendMessage(":" + SERVER_NAME + " 472 " + client.getNickname() + " " + c + " :is unknown mode char to me\r\n");
+					break;
+			}
+		}
+	}
+	// Notify the channel about the mode change
+
+	channel.broadcast(":" + std::string(SERVER_NAME) + " " + std::string(RPL_CHANNELMODEIS) + " " + client.getNickname() + " " + channel.getName() + " :" + modeChanges + modeParamsString + "\r\n", &client);
+}
+
+void ChannelsClientsManager::executePing(Client* client, IRCCommand& command) {
+	std::cout << "Executing PING command " << command.getParams().at(0) << std::endl;
+	Reply::pongReply(*client, command.getParams().at(0));
+}
+
 bool ChannelsClientsManager::isNickInUse(const std::string& nickname) const {
-	for (std::map<int, Client*>::iterator it = _clients->begin(); it != _clients->end(); it++)
+	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
 	{
-		if (it->second->getNickname() == nickname)
+		if (it->second && it->second->getNickname() == nickname)
 			return true;
 	}
 	return false;
@@ -75,7 +218,7 @@ bool ChannelsClientsManager::isNickInUse(const std::string& nickname) const {
 
 void ChannelsClientsManager::registerClient(Client* client, IRCCommand& command) {
 if (command.getCommand() == "PASS") {
-	if (command.getParams().at(0) == *(_password)) {
+	if (command.getParams().at(0) == _password) {
 		client->setAuthenticated(true);
 	}
 	else {
@@ -125,7 +268,7 @@ if (command.getCommand() == "PASS") {
 		Reply::unknownCommand(*client, command.getCommand());
 		return;
 	}
-	if (client->isAuthenticated() && client->isNicknameSet() && client->isUsernameSet() && !client->isCAPNegotiation()) {
+	if (client->isAuthenticated() && client->isNicknameSet() && client->isUsernameSet()) {
 		client->setRegistered(true);
 		Reply::welcome(*client);
 	}
@@ -269,7 +412,7 @@ void ChannelsClientsManager::executeTopic(Client* client, IRCCommand& command)
 		client->sendMessage("You don't have access to this channel!\r\n");
 		return;
 	}
-	if (params.size() == 1)
+	if (command.getParamsCount() == 1)
 	{
 		if (!channel->getTopic().empty())
 			client->sendMessage(channel->getTopic() + "\r\n");
@@ -325,7 +468,7 @@ void ChannelsClientsManager::executeKick(Client* client, IRCCommand& command)
 		return;
 	}
 	std::string kick_message;
-	if (params.size() >= 3)
+	if (command.getParamsCount() >= 3)
 		kick_message = params[2];
 	else
 		kick_message = "No specific reason";
@@ -342,7 +485,7 @@ void ChannelsClientsManager::executeKick(Client* client, IRCCommand& command)
 Client* ChannelsClientsManager::getClientByNickname(const std::string& target_nick, Client* client)
 {
 	Client *target_user = NULL;
-	for (std::map<int, Client*>::iterator it = _clients->begin(); it != _clients->end(); it++)
+	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
     {
         if (it->second->getNickname() == target_nick)
         {
@@ -375,4 +518,40 @@ Channel* ChannelsClientsManager::getChannel(std::string const &channelName) {
 	if (it != _channels.end())
 		return it->second;
 	return NULL;
+}
+
+void ChannelsClientsManager::removeClient(Client &client) {
+	// Remove client from all channels
+	std::vector<std::string>& clientChannels = client.getChannels();
+	for (size_t i = 0; i < clientChannels.size(); ++i) {
+		std::string channelName = clientChannels[i];
+		Channel* channel = getChannel(channelName);
+		if (channel) {
+			channel->removeClient(&client);
+			// If the channel is empty after removal, delete it
+			if (channel->getClients().empty()) {
+				delete channel;
+				_channels.erase(channelName);
+			}
+		}
+	}
+	// Remove client from the clients map
+	_clients.erase(client.getFd());
+	// Remove client's pollfd entry
+	for (std::vector<pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it) {
+		if (it->fd == client.getFd()) {
+			_pollfds.erase(it);
+			break;
+		}
+	}
+	// Close the client's socket
+	close(client.getFd());
+	// Finally, delete the client object
+	delete &client;
+}
+
+
+void ChannelsClientsManager::sendPingToClient(Client* client) {
+	std::string pingMessage = "PING " + std::string(SERVER_NAME) + "\r\n";
+	client->sendMessage(pingMessage);
 }

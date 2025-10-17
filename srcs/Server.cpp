@@ -1,8 +1,8 @@
 #include "../inc/ft_irc.hpp"
 #include "Reply.hpp"
 
-Server::Server(int port, const std::string& password)
-    : _port(port), _password(password)
+Server::Server(int port, const std::string& password, time_t timeToLive)
+    : _port(port), _password(password), _clientTimeToLive(timeToLive), _manager(_clients, _password, _pollfds)
 {
     // Create socket
     // AF_INET      IPv4 Internet protocols
@@ -69,7 +69,7 @@ Server::Server(int port, const std::string& password)
     pfd.revents = 0;
     _pollfds.push_back(pfd);
 
-    _manager.setClientsMap(&_clients, &_password, &_pollfds);
+    // _manager.setClientsMap(&_clients, &_password, &_pollfds);
     std::cout << "Server initialized on port " << _port << std::endl;
 }
 
@@ -97,7 +97,7 @@ void Server::start()
 
     while (true)
     {
-        if (poll(&_pollfds[0], _pollfds.size(), -1) < 0) /// exit after period of time
+        if (poll(&_pollfds[0], _pollfds.size(), 60000) < 0) /// exit after period of time in milliseconds
         {
             if (errno == EINTR)
                 continue;
@@ -122,6 +122,15 @@ void Server::start()
             {
                 if (_pollfds[i].fd != _socket)
                     removeClient(_pollfds[i].fd);
+            }
+
+            Client *client = _clients[_pollfds[i].fd];
+            if (client != NULL) {
+                if (client->getTimePassed() >= _clientTimeToLive)
+                    removeClient(_pollfds[i].fd);
+                else if (client->getTimePassed() >= _clientTimeToLive / 2)
+                    _manager.sendPingToClient(client);
+                continue;
             }
         }
     }
@@ -180,7 +189,6 @@ void Server::handleClientMessage(int clientfd)
     Client *client = _clients[clientfd];
     char buffer[BUFFER_SIZE + 1];
     memset(buffer, 0, sizeof(buffer));
-
     ssize_t bytes_read = recv(clientfd, buffer, BUFFER_SIZE, 0);
     if (bytes_read <= 0)
     {
@@ -365,6 +373,7 @@ void Server::removeClient(int clientfd)
         }
     }
     // Close socket and delete client
+    Reply::connectionClosed(*client);
     close(clientfd);
     std::cout << "Client disconnected (fd: " << clientfd << ")" << std::endl;
     delete client;
@@ -387,3 +396,4 @@ const std::string& Server::getPassword() const
 {
     return _password;
 }
+

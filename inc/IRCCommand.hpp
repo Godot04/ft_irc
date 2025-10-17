@@ -56,6 +56,7 @@ private:
 	void							handleInviteCmd(std::istringstream &iss);
 	void							handleKickCmd(std::istringstream &iss);
 	void							handleTopicCmd(std::istringstream &iss);
+	void							handlePingCmd(std::istringstream &iss);
 	void							processCommand();
 	void							trimCRLF(std::string &str);
 public:
@@ -65,12 +66,13 @@ public:
 	std::string const				&getCommand() const;
 	std::string const				&getPrefix() const;
 	std::vector<std::string> const	&getParams() const;
+	std::string						getParamAt(size_t index) const;
+	size_t							getParamsCount() const;
 	// getParamAt(2)
 	std::string const				&getErrorNum() const;
 	ModeSign const					&getCurrentModeSign() const;
 	ModeFlag						getModeFlag();
 	bool							isFlagSetValid(std::string const &flags) const;
-
 };
 
 #endif

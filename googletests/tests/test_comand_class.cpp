@@ -620,6 +620,67 @@ TEST(CommandClassTest, PrivmsgCommandWithSpecialCharsTest) {
 }
 
 
+
+// PING ft_irc.42.de
+TEST(CommandClassTest, PingCommandValidTest) {
+	std::string pingStr = "PING ft_irc.42.de\r\n";
+	IRCCommand cmd(pingStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "PING");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 1);
+	EXPECT_EQ(params.at(0), "ft_irc.42.de");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+TEST(CommandClassTest, PingCommandNoParamsTest) {
+	std::string pingStr = "PING\r\n";
+	IRCCommand cmd(pingStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "PING");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 0);
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+TEST(CommandClassTest, PingCommandEmptyParamTest) {
+	std::string pingStr = "PING :\r\n";
+	IRCCommand cmd(pingStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "PING");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 1);
+	EXPECT_EQ(params.at(0), ":");
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+TEST(CommandClassTest, PingCommandWithExtraParamsTest) {
+	std::string pingStr = "PING ft_irc.42.de extra\r\n";
+	IRCCommand cmd(pingStr);
+	EXPECT_EQ(cmd.isValid(), false);
+	EXPECT_EQ(cmd.getCommand(), "PING");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 2);
+	EXPECT_EQ(params.at(0), "ft_irc.42.de");
+	EXPECT_EQ(params.at(1), "extra");
+	EXPECT_EQ(cmd.getErrorNum(), ERR_NEEDMOREPARAMS);
+}
+
+// PONG ft_irc.42.de
+
+// PONG Command Tests
+TEST(CommandClassTest, PongCommandValidTest) {
+	std::string pongStr = "PONG ft_irc.42.de\r\n";
+	IRCCommand cmd(pongStr);
+	EXPECT_EQ(cmd.isValid(), true);
+	EXPECT_EQ(cmd.getCommand(), "PONG");
+	std::vector<std::string> params = cmd.getParams();
+	ASSERT_EQ(params.size(), 1);
+	EXPECT_EQ(params.at(0), "ft_irc.42.de");
+	EXPECT_EQ(cmd.getErrorNum(), "");
+}
+
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
