@@ -54,3 +54,19 @@ void Reply::pongReply(const Client& client, const std::string& server) {
 void Reply::pingToClient(const Client& client, const std::string& server) {
     client.sendMessage("PING :" + server + "\r\n");
 }
+
+void Reply::noSuchChannel(const Client& client, const std::string& channel) {
+    client.sendMessage(build(ERR_NOSUCHCHANNEL, channel, " No such channel"));
+}
+
+void Reply::notOnChannel(const Client& client, const std::string& channel) {
+    client.sendMessage(build(ERR_NOTONCHANNEL, channel, " You're not on that channel"));
+}
+
+void Reply::usersDontMatch(const Client& client) {
+    client.sendMessage(build(ERR_USERSDONTMATCH, client.getNickname(), "Cannot change mode for other users"));
+}
+
+void Reply::notOperator(const Client& client, const std::string& channel) {
+    client.sendMessage(build(ERR_CHANOPRIVSNEEDED, channel, "You're not channel operator"));
+}

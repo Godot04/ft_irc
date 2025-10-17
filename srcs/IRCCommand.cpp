@@ -511,3 +511,14 @@ bool IRCCommand::isFlagSetValid(std::string const &flags) const {
     }
     return true;
 }
+
+std::string IRCCommand::getParamAt(size_t index) const {
+    if (index < _params.size()) {
+        return _params[index];
+    }
+    return "";
+}
+
+size_t IRCCommand::getParamsCount() const {
+    return _params.size();
+}

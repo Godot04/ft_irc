@@ -163,3 +163,11 @@ void Channel::removeClient(const std::string& client)
         }
     }
 }
+
+void Channel::setInviteOnly(bool status) {
+    _isInviteOnly = status;
+}
+
+bool Channel::isInviteOnly() const {
+    return _isInviteOnly;
+}
