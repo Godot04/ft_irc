@@ -5,10 +5,10 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include "Channel.hpp"
 
 class Server;
 class Client;
-#include "Channel.hpp"
 class Command
 {
     private:

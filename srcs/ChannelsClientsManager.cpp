@@ -131,18 +131,21 @@ if (command.getCommand() == "PASS") {
 	}
 }
 
-void ChannelsClientsManager::executePrivmsg(Client* client, IRCCommand& command) {
+void ChannelsClientsManager::executePrivmsg(Client* client, IRCCommand& command)
+{
 	const std::vector<std::string>& params = command.getParams();
 	std::string target = params[0];
 	std::string message = params[1];
 	if (target[0] == '#' || target[0] == '&')
 	{
-		if (_channels.find(target) == _channels.end()) {
+		if (_channels.find(target) == _channels.end())
+		{
 			client->sendMessage("server 403: " + client->getNickname() + " sent message to " + target + " :No such channel exist\r\n");
 			return;
 		}
 		Channel *channel = _channels[target];
-		if (!channel->isClientInChannel(client)) {
+		if (!channel->isClientInChannel(client))
+		{
 			client->sendMessage("server 404: " + client->getNickname() + " doesn't have access to this channel - " + target + "\r\n");
 			return;
 		}
@@ -163,7 +166,8 @@ void ChannelsClientsManager::executePrivmsg(Client* client, IRCCommand& command)
 	}
 }
 
-void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command) {
+void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command)
+{
 	const std::vector<std::string>& params = command.getParams();
 	std::string channels = params[0];
 	size_t start = 0;
@@ -192,7 +196,8 @@ void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command) {
 		}
 		else
 			channel = _channels[target];
-		if (channel->isClientInChannel(client)) {
+		if (channel->isClientInChannel(client))
+		{
 			client->sendMessage("You're already in this channel\r\n");
 			continueLoopJoin(start, end, channels);
 			continue;
@@ -214,7 +219,8 @@ void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command) {
 	}
 }
 
-void ChannelsClientsManager::executeInvite(Client* client, IRCCommand& command) {
+void ChannelsClientsManager::executeInvite(Client* client, IRCCommand& command)
+{
 	const std::vector<std::string>& params = command.getParams();
 	std::string target_nick = params[0];
 	std::string target_channel = params[1];
