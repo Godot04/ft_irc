@@ -20,7 +20,7 @@ void ChannelsClientsManager::handleClientMessage(Client* client) {
 
 	for (std::string message = client->getNextMessage(); !message.empty(); message = client->getNextMessage())
 	{
-		// std::cout << "MESSAGE: "<< message << std::endl;
+		std::cout << "MESSAGE: "<< message << std::endl;
 		message += "\r\n"; // Add CRLF back for parsing
 		IRCCommand command(message);
 		if (!command.isValid()) {
@@ -74,11 +74,18 @@ void ChannelsClientsManager::handleRegisteredClientMessage(Client* client, IRCCo
 	else if (command.getCommand() == "MODE") {
 		executeMode(client, command);
 	}
+	else if (command.getCommand() == "WHOIS") {
+		executeWhois(client, command);
+	}
 	else
 		Reply::unknownCommand(*client, command.getCommand());
 }
 
 void ChannelsClientsManager::executeMode(Client* client, IRCCommand& command) {
+	if (command.getParamsCount() < 1) {
+		client->sendMessage("server 461: Not enough parameters for MODE\r\n");
+		return;
+	}
 	std::string targetChannel = command.getParamAt(0);
 	if (targetChannel[0] == '#' || targetChannel[0] == '&') {
 		if (_channels.find(targetChannel) == _channels.end()) {
@@ -86,23 +93,21 @@ void ChannelsClientsManager::executeMode(Client* client, IRCCommand& command) {
 			return;
 		}
 		Channel *channel = _channels[targetChannel];
+		if (command.getParamsCount() < 2) {
+			std::string modes = "+";
+			if (channel->isInviteOnly()) modes += "i";
+			if (channel->isTopicProtected()) modes += "t";
+			if (!channel->getKey().empty()) modes += "k";
+			if (channel->getUserLimit() > 0) modes += "l";
+			client->sendMessage(":" + std::string(SERVER_NAME) + " 324 " + client->getNickname() +
+				" " + targetChannel + " " + modes + "\r\n");
+			return;
+		}
 		if (!channel->isOperator(client)) {
 			Reply::notOperator(*client, targetChannel);
 			return;
 		}
 		handleModeFlags(*client, *channel, command);
-		// if (command.get)
-		// channel->broadcast(":" + client->getNickname() + " MODE " + target + "\r\n", client);
-		// channel->setInviteOnly(true);
-		// if (command.getParamsCount() == 1) {
-		// 	// Just return the current modes
-		// 	std::string modes = channel->getModesString();
-		// 	client->sendMessage(":" + SERVER_NAME + " 324 " + client->getNickname() + " " + target + " :" + modes + "\r\n");
-		// 	return;
-		// }
-		// std::string modeChanges = params[1];
-		// std::string modeParams = (command.getParamsCount() > 2) ? params[2] : "";
-		// channel->changeModes(client, modeChanges, modeParams);
 	}
 }
 
@@ -205,6 +210,43 @@ void ChannelsClientsManager::handleModeFlags(Client &client, Channel &channel, I
 void ChannelsClientsManager::executePing(Client* client, IRCCommand& command) {
 	std::cout << "Executing PING command " << command.getParams().at(0) << std::endl;
 	Reply::pongReply(*client, command.getParams().at(0));
+}
+
+void ChannelsClientsManager::executeWhois(Client* client, IRCCommand& command) {
+	if (command.getParamsCount() < 1) {
+		client->sendMessage(":" + std::string(SERVER_NAME) + " 431 " + client->getNickname() + " :No nickname given\r\n");
+		return;
+	}
+
+	std::string targetNick = command.getParamAt(0);
+	Client* targetClient = NULL;
+
+	// Find the target client
+	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it) {
+		if (it->second && it->second->getNickname() == targetNick) {
+			targetClient = it->second;
+			break;
+		}
+	}
+
+	if (!targetClient) {
+		client->sendMessage(":" + std::string(SERVER_NAME) + " 401 " + client->getNickname() + " " + targetNick + " :No such nick\r\n");
+		return;
+	}
+
+	// Send WHOIS information
+	// 311 RPL_WHOISUSER "<nick> <user> <host> * :<real name>"
+	client->sendMessage(":" + std::string(SERVER_NAME) + " 311 " + client->getNickname() + " " +
+		targetClient->getNickname() + " " + targetClient->getUsername() + " " +
+		targetClient->getHostname() + " * :" + targetClient->getRealname() + "\r\n");
+
+	// 312 RPL_WHOISSERVER "<nick> <server> :<server info>"
+	client->sendMessage(":" + std::string(SERVER_NAME) + " 312 " + client->getNickname() + " " +
+		targetClient->getNickname() + " " + std::string(SERVER_NAME) + " :ft_irc Server\r\n");
+
+	// 318 RPL_ENDOFWHOIS "<nick> :End of WHOIS list"
+	client->sendMessage(":" + std::string(SERVER_NAME) + " 318 " + client->getNickname() + " " +
+		targetClient->getNickname() + " :End of WHOIS list\r\n");
 }
 
 bool ChannelsClientsManager::isNickInUse(const std::string& nickname) const {
@@ -313,8 +355,13 @@ void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command)
 {
 	const std::vector<std::string>& params = command.getParams();
 	std::string channels = params[0];
+	std::string keys = "";
+	if (params.size() > 1)
+		keys = params[1];
 	size_t start = 0;
 	size_t end = channels.find(',');
+	size_t key_start = 0;
+	size_t key_end = keys.find(',');
 	while (start < channels.length())
 	{
 		std::string target;
@@ -322,11 +369,19 @@ void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command)
 			target = channels.substr(start);
 		else
 			target = channels.substr(start, end - start);
-
+		std::string key = "";
+		if (!keys.empty() && key_start < keys.length()) {
+			if (key_end == std::string::npos)
+				key = keys.substr(key_start);
+			else
+				key = keys.substr(key_start, key_end - key_start);
+		}
 		if ((target[0] != '#' && target[0] != '&') || target.length() < 2)
 		{
 			client->sendMessage("server 403: sent invalid characters for channel name to JOIN\r\n");
 			continueLoopJoin(start, end, channels);
+			if (!keys.empty())
+				continueLoopJoin(key_start, key_end, keys);
 			continue;
 		}
 		bool the_first_one = false;
@@ -343,7 +398,39 @@ void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command)
 		{
 			client->sendMessage("You're already in this channel\r\n");
 			continueLoopJoin(start, end, channels);
+			if (!keys.empty())
+				continueLoopJoin(key_start, key_end, keys);
 			continue;
+		}
+		if (!the_first_one)
+		{
+			if (channel->isInviteOnly())
+			{
+				client->sendMessage("server 473: Can't join a channel (+i)\r\n");
+				continueLoopJoin(start, end, channels);
+				if (!keys.empty())
+					continueLoopJoin(key_start, key_end, keys);
+				continue;
+			}
+			if (!channel->getKey().empty())
+			{
+				if (key.empty() || key != channel->getKey())
+				{
+					client->sendMessage("server 475: Can't join a channel (wrong key (+k))\r\n");
+					continueLoopJoin(start, end, channels);
+					if (!keys.empty())
+						continueLoopJoin(key_start, key_end, keys);
+					continue;
+				}
+			}
+			if (channel->getUserLimit() > 0 && channel->getClients().size() >= channel->getUserLimit())
+			{
+				client->sendMessage("server 471: can't join a full channel(+l)\r\n");
+				continueLoopJoin(start, end, channels);
+				if (!keys.empty())
+					continueLoopJoin(key_start, key_end, keys);
+				continue;
+			}
 		}
 		if (the_first_one)
 			channel->addOperator(client);
@@ -359,6 +446,8 @@ void ChannelsClientsManager::executeJoin(Client* client, IRCCommand& command)
 		else
 			client->sendMessage("Topic of this channel is not set yet\r\n");
 		continueLoopJoin(start, end, channels);
+		if (!keys.empty())
+			continueLoopJoin(key_start, key_end, keys);
 	}
 }
 
@@ -421,9 +510,9 @@ void ChannelsClientsManager::executeTopic(Client* client, IRCCommand& command)
 		return;
 	}
 	std::string new_topic = params[1];
-	if (!channel->isOperator(client))
+	if (channel->isTopicProtected() && !channel->isOperator(client))
 	{
-		client->sendMessage("You don't have operator rights to change the topic\r\n");
+		client->sendMessage("server 482: You're not channel operator (topic is protected)(+t)\r\n");
 		return;
 	}
 	channel->setTopic(new_topic);
@@ -510,6 +599,11 @@ void ChannelsClientsManager::continueLoopJoin(size_t &start, size_t &end, const 
 		start = end + 1;
 		end = channels.find(',', start);
 	}
+}
+
+void ChannelsClientsManager::Key_check()
+{
+	
 }
 
 

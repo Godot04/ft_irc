@@ -190,12 +190,17 @@ void Server::handleClientMessage(int clientfd)
     char buffer[BUFFER_SIZE + 1];
     memset(buffer, 0, sizeof(buffer));
     ssize_t bytes_read = recv(clientfd, buffer, BUFFER_SIZE, 0);
-    if (bytes_read <= 0)
+    // std::cout << "ClientFD is: " << clientfd << std::endl;
+    std::cout << "Bytes read: " << bytes_read << std::endl;
+    if (bytes_read < 0)
     {
         if (bytes_read == 0 || errno != EAGAIN)
+        {
             removeClient(clientfd);
-        return;
+            return;
+        }
     }
+    // std::cout << "I went through here\n";
     client->addToBuffer(std::string(buffer, bytes_read));
     if (!client->hasCompleteMessage())
     {
@@ -373,7 +378,7 @@ void Server::removeClient(int clientfd)
         }
     }
     // Close socket and delete client
-    Reply::connectionClosed(*client);
+    // Reply::connectionClosed(*client);
     close(clientfd);
     std::cout << "Client disconnected (fd: " << clientfd << ")" << std::endl;
     delete client;
@@ -396,4 +401,3 @@ const std::string& Server::getPassword() const
 {
     return _password;
 }
-

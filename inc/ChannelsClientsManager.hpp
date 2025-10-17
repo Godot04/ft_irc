@@ -57,10 +57,12 @@ private:
 	void							executeKick(Client* client, IRCCommand& command);
 	void							executePing(Client* client, IRCCommand& command);
 	void							executeMode(Client* client, IRCCommand& command);
+	void							executeWhois(Client* client, IRCCommand& command);
 	// Helper functions
 	void							handleModeFlags(Client &client, Channel &channel, IRCCommand& command);
 	Client*							getClientByNickname(const std::string& nickname, Client* client);
 	void							continueLoopJoin(size_t &start, size_t &end, const std::string& channels);
+	void							Key_check();
 };
 
 
