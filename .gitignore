@@ -2,6 +2,5 @@ objs/
 ft_irc_serv
 py_test.py
 .vscode/
-googltests/googletest/
+googletests/googletest/
 googletests/build/
-clear

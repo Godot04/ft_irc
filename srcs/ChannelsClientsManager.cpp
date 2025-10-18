@@ -20,7 +20,7 @@ void ChannelsClientsManager::handleClientMessage(Client* client) {
 
 	for (std::string message = client->getNextMessage(); !message.empty(); message = client->getNextMessage())
 	{
-		std::cout << "MESSAGE: "<< message << std::endl;
+		// std::cout << "MESSAGE: "<< message << std::endl;
 		message += "\r\n"; // Add CRLF back for parsing
 		IRCCommand command(message);
 		if (!command.isValid()) {
@@ -259,14 +259,14 @@ bool ChannelsClientsManager::isNickInUse(const std::string& nickname) const {
 }
 
 void ChannelsClientsManager::registerClient(Client* client, IRCCommand& command) {
-if (command.getCommand() == "PASS") {
-	if (command.getParams().at(0) == _password) {
-		client->setAuthenticated(true);
-	}
-	else {
-		Reply::passwordMismatch(*client);
-		return;
-	}
+	if (command.getCommand() == "PASS") {
+		if (command.getParams().at(0) == _password) {
+			client->setAuthenticated(true);
+		}
+		else {
+			Reply::passwordMismatch(*client);
+			return;
+		}
 	}
 	else if (command.getCommand() == "NICK") {
 		// Check if nickname is already in use
@@ -574,10 +574,17 @@ void ChannelsClientsManager::executeKick(Client* client, IRCCommand& command)
 Client* ChannelsClientsManager::getClientByNickname(const std::string& target_nick, Client* client)
 {
 	Client *target_user = NULL;
+
+	if (!client) // caller should provide a valid client for error replies
+        return NULL;
 	for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); it++)
     {
+		Client* c = it->second;
+		if (!c) // skip null pointers
+            continue;
         if (it->second->getNickname() == target_nick)
         {
+
             target_user = it->second;
             break;
         }

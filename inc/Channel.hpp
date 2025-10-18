@@ -13,10 +13,10 @@ private:
     std::string                 _topic;
     std::vector<Client*>        _clients;
     std::vector<Client*>        _operators;
-        bool                        _isInviteOnly;
-        bool                        _topicProtected;
-        std::string                 _key; // password
-        size_t                      _userLimit;
+    bool                        _isInviteOnly;
+    bool                        _topicProtected;
+    std::string                 _key; // password
+    size_t                      _userLimit;
 
     // Unique identifier for the channel (if needed)
     // std::uint64_t id_;
