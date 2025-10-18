@@ -55,6 +55,13 @@ clone_google_test:
 	mkdir -p googletests/googletest
 	git clone https://github.com/google/googletest.git googletests/googletest
 
+gdb: re
+	gdb ./ft_irc_serv
+
+debug_run:
+	make re CXXFLAGS="-g -O0 -std=c++98 -Wall -Wextra"
+	gdb --args ./ft_irc_serv 1201 123
+
 set_build:
 	mkdir -p googletests/build
 	cd googletests/build && cmake ..

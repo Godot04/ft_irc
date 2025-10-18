@@ -522,6 +522,23 @@ void ChannelsClientsManager::executeTopic(Client* client, IRCCommand& command)
 		return;
 	}
 	std::string new_topic = params[1];
+	bool hasContent = false;
+	for (size_t i = 0; i < new_topic.length(); i++)
+	{
+		if (!std::isspace(new_topic[i]))
+		{
+			hasContent = true;
+			break;
+		}
+	}
+	if (!hasContent)
+	{
+		if (!channel->getTopic().empty())
+			client->sendMessage(channel->getTopic() + "\r\n");
+		else
+			client->sendMessage("Topic of this channel is not set yet\r\n");
+		return;
+	}
 	if (channel->isTopicProtected() && !channel->isOperator(client))
 	{
 		client->sendMessage("server 482: You're not channel operator (topic is protected)(+t)\r\n");
@@ -531,17 +548,56 @@ void ChannelsClientsManager::executeTopic(Client* client, IRCCommand& command)
 	std::string formatted_msg = client->getNickname() + "!" + client->getUsername() + "@"
 								+ client->getHostname() + " TOPIC " + target + " :"
 								+ new_topic + "\r\n";
+	client->sendMessage("You succesfully changed the topic for this channel!\r\n");
 	channel->broadcast(formatted_msg, client);
 }
 
 void ChannelsClientsManager::executeKick(Client* client, IRCCommand& command)
 {
-	const std::vector<std::string>& params = command.getParams();
-	std::string target_channel = params[0];
-	std::string target_nick = params[1];
-	if (target_channel[0] != '#' && target_channel[0] != '&')
+	if (command.getParamsCount() < 2)
 	{
-		client->sendMessage("Input must follow irc protocol (#channel or &channel)\r\n");
+		client->sendMessage("server 461: Not enough parameters for KICK\r\n");
+		return;
+	}
+	const std::vector<std::string>& params = command.getParams();
+	std::string target_channel;
+	std::string target_nick;
+	std::string kick_message = "No specific reason";
+	if (params[0][0] == '#' || params[0][0] == '&')
+	{
+		target_channel = params[0];
+		target_nick = params[1];
+		if (command.getParamsCount() >= 3)
+			kick_message = params[2];
+	}
+	else
+	{
+		bool found_channel = false;
+		for (size_t i = 0; i < params.size(); ++i) {
+			if (params[i][0] == '#' || params[i][0] == '&')
+			{
+				target_channel = params[i];
+				found_channel = true;
+				if (i > 0)
+					target_nick = params[i - 1];
+				else if (i + 1 < params.size())
+					target_nick = params[i + 1];
+				if (i + 2 < params.size())
+					kick_message = params[i + 1];
+				else if (i > 1)
+					kick_message = params[i + 1];
+				break;
+			}
+		}
+		if (!found_channel)
+		{
+			client->sendMessage("server 461: Invalid format for KICK\r\n");
+			return;
+		}
+	}
+	if (target_channel.empty() || target_nick.empty())
+	{
+		client->sendMessage("server 461 Invalid parameters for KICK\r\n");
 		return;
 	}
 	if (_channels.find(target_channel) == _channels.end())
@@ -568,11 +624,6 @@ void ChannelsClientsManager::executeKick(Client* client, IRCCommand& command)
 		client->sendMessage("server 441: User doesn't have access to this channel\r\n");
 		return;
 	}
-	std::string kick_message;
-	if (command.getParamsCount() >= 3)
-		kick_message = params[2];
-	else
-		kick_message = "No specific reason";
 	channel->removeClient(target_user);
 	target_user->removeChannel(target_channel);
 	std::string formatted_msg = "User " + target_nick + " was kicked from " + target_channel

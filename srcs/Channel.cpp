@@ -27,6 +27,7 @@ void Channel::removeClient(Client* client)
         if (*it == client)
         {
             _clients.erase(it);
+            std::cout << "removed addres: " + client->getNickname() << std::endl;
             break;
         }
     }
@@ -36,6 +37,7 @@ void Channel::removeClient(Client* client)
     {
         if (*it == client)
         {
+            std::cout << "removed operator: " + client->getNickname() << std::endl;
             _operators.erase(it);
             break;
         }
@@ -46,6 +48,7 @@ void Channel::removeClient(Client* client)
     {
         if (*it == client)
         {
+            std::cout << "removed invited: " + client->getNickname() << std::endl;
             _invited.erase(it);
             break;
         }
@@ -56,6 +59,7 @@ void Channel::removeClient(Client* client)
     {
         if (*it == _name)
         {
+            std::cout << "removed channel: " + client->getNickname() << std::endl;
             client->getChannels().erase(it);
             break;
         }
