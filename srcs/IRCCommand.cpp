@@ -237,10 +237,12 @@ void IRCCommand::handleModeCmd(std::istringstream &iss) {
             return ;
         }
 
-        if (_params.size() == 1 && word[0] != '#') {
+        if (_params.size() == 1 && word[0] != '#' && word[0] != '&') {
+            std::cout << "SETTING INVALID AT MODE #& USER" << std::endl;
             _errorNum = ERR_NEEDMOREPARAMS;
         }
         else if (_params.size() == 2 && !isFlagSetValid(word)) {
+            std::cout << "SETTING INVALID AT MODE FLAGS VALIDITY" << std::endl;
             _errorNum = ERR_NEEDMOREPARAMS;
         }
         else if (_params.size() == 2) {
@@ -259,18 +261,19 @@ void IRCCommand::handleModeCmd(std::istringstream &iss) {
 void IRCCommand::handleModeCmdParams(std::istringstream &iss) {
     ModeFlag currentFlag;
     while ((currentFlag = getModeFlag()) != MODE_UNKNOWN) {
-        if (currentFlag == MODE_KEY || currentFlag == MODE_KEY) {
+        if ((currentFlag == MODE_KEY && _currentModeSign == PLUS) || currentFlag == MODE_OPERATOR) {
             std::string param;
             if (iss >> param) {
                 trimCRLF(param);
                 _params.push_back(param);
             } else {
+                std::cout << "SETTING INVALID AT MODE KEY/OPERATOR" << std::endl;
                 _isValid = false;
                 _errorNum = ERR_NEEDMOREPARAMS;
                 return ;
             }
         }
-        else if (currentFlag == MODE_LIMIT_USER) {
+        else if (currentFlag == MODE_LIMIT_USER && _currentModeSign == PLUS) {
             std::string limitParam;
             if (iss >> limitParam) {
                 trimCRLF(limitParam);
@@ -288,10 +291,15 @@ void IRCCommand::handleModeCmdParams(std::istringstream &iss) {
                 }
                 _params.push_back(limitParam);
             } else {
+                std::cout << "SETTING INVALID AT MODE LIMIT USER" << std::endl;
                 _isValid = false;
                 _errorNum = ERR_NEEDMOREPARAMS;
                 return ;
             }
+        }
+        else if (currentFlag == MODE_LIMIT_USER && _currentModeSign == MINUS) {
+            // No parameter needed when removing limit
+            continue;
         }
     }
 }
@@ -403,7 +411,8 @@ void IRCCommand::handleInviteCmd(std::istringstream &iss) {
     _isValid = true;
 }
 
-void IRCCommand::handleKickCmd(std::istringstream &iss) {
+void IRCCommand::handleKickCmd(std::istringstream &iss)
+{
     std::string target_channel;
     std::string target_nick;
 

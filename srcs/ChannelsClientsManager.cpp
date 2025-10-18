@@ -89,6 +89,7 @@ void ChannelsClientsManager::handleRegisteredClientMessage(Client* client, IRCCo
 
 void ChannelsClientsManager::executeMode(Client* client, IRCCommand& command) {
 	if (command.getParamsCount() < 1) {
+		std::cout << "Not enough parameters for MODE" << std::endl;
 		client->sendMessage("server 461: Not enough parameters for MODE\r\n");
 		return;
 	}
@@ -163,13 +164,18 @@ void ChannelsClientsManager::handleModeFlags(Client &client, Channel &channel, I
 					break;
 				}
 				case MODE_LIMIT_USER: {
-					if (paramIndex >= modeParams.size()) {
+					if (paramIndex >= modeParams.size() && currentSign == PLUS) {
+						std::cout << "Not enough parameters for MODE2" << std::endl;
 						client.sendMessage(":" + std::string(SERVER_NAME) + " 461 " + client.getNickname() + " MODE :Not enough parameters\r\n");
 						break;
 					}
-					size_t limit = static_cast<size_t>(atoi(modeParams[paramIndex].c_str()));
-					channel.setUserLimit(limit);
-					paramIndex++;
+					if (currentSign == PLUS) {
+						size_t limit = static_cast<size_t>(atoi(modeParams[paramIndex].c_str()));
+						channel.setUserLimit(limit);
+						paramIndex++;
+					}
+					else
+						channel.setUserLimit(0);
 					break;
 				}
 				case MODE_OPERATOR: {
@@ -476,8 +482,18 @@ void ChannelsClientsManager::executeInvite(Client* client, IRCCommand& command)
 		return ;
 	if (_channels.find(target_channel) == _channels.end())
 	{
-		client->sendMessage("server 403: This channel doesn't exist!\r\n");
-		return;
+		// Fallback: if nick token actually looks like a channel, swap
+		if (!target_nick.empty() && (target_nick[0] == '#' || target_nick[0] == '&') && _channels.find(target_nick) != _channels.end())
+		{
+			std::string maybeNick = target_channel;
+			target_channel = target_nick;
+			target_nick = maybeNick;
+		}
+		else
+		{
+			client->sendMessage("server 403: This channel doesn't exist!\r\n");
+			return;
+		}
 	}
 	Channel *channel = _channels[target_channel];
 	if (!channel->isClientInChannel(client))
@@ -579,9 +595,14 @@ void ChannelsClientsManager::executeKick(Client* client, IRCCommand& command)
 	}
 	else
 	{
+		for (size_t i = 0; i < params.size(); i++)
+			std::cout << params[i] << " ";
+		std::cout << std::endl;
 		bool found_channel = false;
-		for (size_t i = 0; i < params.size(); ++i) {
-			if (params[i][0] == '#' || params[i][0] == '&')
+		for (size_t i = 0; i < params.size(); ++i)
+		{
+			std::cout << params[i] << std::endl;
+			if (!params[i].empty() && (params[i][0] == '#' || params[i][0] == '&'))
 			{
 				target_channel = params[i];
 				found_channel = true;
@@ -590,9 +611,9 @@ void ChannelsClientsManager::executeKick(Client* client, IRCCommand& command)
 				else if (i + 1 < params.size())
 					target_nick = params[i + 1];
 				if (i + 2 < params.size())
-					kick_message = params[i + 1];
-				else if (i > 1)
-					kick_message = params[i + 1];
+					kick_message = params[i + 2];
+				else if (i > 1 && i + 1 >= params.size())
+					kick_message = params[i - 2];
 				break;
 			}
 		}
