@@ -8,15 +8,15 @@ OBJ_DIR = objs/
 INC_DIR = inc/
 
 SRCS = main.cpp \
-       Server.cpp \
-       Client.cpp \
-       Channel.cpp \
-       Command.cpp \
-	   Command_utils.cpp \
-	   Reply.cpp \
-	   Server_Commands.cpp \
-	   IRCCommand.cpp \
-	   ChannelsClientsManager.cpp
+	Server.cpp \
+	Client.cpp \
+	Channel.cpp \
+	Command.cpp \
+	Command_utils.cpp \
+	Reply.cpp \
+	Server_Commands.cpp \
+	IRCCommand.cpp \
+	ChannelsClientsManager.cpp
 
 OBJS = $(addprefix $(OBJ_DIR), $(SRCS:.cpp=.o))
 
@@ -57,6 +57,9 @@ gdb: re
 debug_run:
 	make re CXXFLAGS="-g -O0 -std=c++98 -Wall -Wextra"
 	gdb --args ./ft_irc_serv 1201 123
+
+valgrind_deep: re
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ft_irc_serv 1201 123
 
 clone_google_test:
 	mkdir -p googletests/googletest

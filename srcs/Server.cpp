@@ -1,9 +1,18 @@
 #include "../inc/ft_irc.hpp"
 #include "Reply.hpp"
+#include <signal.h>
+#include <csignal>
+
+static volatile sig_atomic_t g_terminate = 0;
+static void handle_sigint(int)
+{
+    g_terminate = 1;
+}
 
 Server::Server(int port, const std::string& password, time_t timeToLive)
     : _port(port), _password(password), _clientTimeToLive(timeToLive), _manager(_clients, _password, _pollfds)
 {
+    std::signal(SIGINT, handle_sigint);
     // Create socket
     // AF_INET      IPv4 Internet protocols
     // SOCK_STREAM is for TCP
@@ -97,7 +106,9 @@ void Server::start()
 
     while (true)
     {
-        if (poll(&_pollfds[0], _pollfds.size(), 5000) < 0) /// exit after period of time in milliseconds
+        if (g_terminate) // break quickly if signal already received
+            break;
+        if (poll(&_pollfds[0], _pollfds.size(), 60000) < 0) /// exit after period of time in milliseconds
         {
             if (errno == EINTR)
                 continue;
@@ -130,7 +141,10 @@ void Server::start()
                 if (client->getTimePassed() >= _clientTimeToLive)
                     _manager.removeClient(*client);
                 else if (client->getTimePassed() >= _clientTimeToLive / 2)
+                {
                     _manager.sendPingToClient(client);
+                    _clientTimeToLive *= 2;
+                }
                 continue;
             }
         }

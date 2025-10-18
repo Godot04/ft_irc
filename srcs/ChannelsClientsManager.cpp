@@ -5,7 +5,12 @@ ChannelsClientsManager::ChannelsClientsManager(std::map<int, Client*> &clients, 
 	: _clients(clients), _password(password), _pollfds(pollfds)
 {}
 
-ChannelsClientsManager::~ChannelsClientsManager() {}
+ChannelsClientsManager::~ChannelsClientsManager()
+{
+	for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
+		delete it->second;
+	_channels.clear();
+}
 
 
 // void ChannelsClientsManager::setClientsMap(std::map<int, Client*> *clients, std::string const *password, std::vector<pollfd> *pollfds) {
