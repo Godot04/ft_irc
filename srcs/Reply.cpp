@@ -70,3 +70,7 @@ void Reply::usersDontMatch(const Client& client) {
 void Reply::notOperator(const Client& client, const std::string& channel) {
     client.sendMessage(build(ERR_CHANOPRIVSNEEDED, channel, "You're not channel operator"));
 }
+
+void Reply::invalidCommand(const Client& client, const std::string& command) {
+    client.sendMessage(build(ERR_UNKNOWNCOMMAND, client.getNickname(), command + " :Invalid command format"));
+}

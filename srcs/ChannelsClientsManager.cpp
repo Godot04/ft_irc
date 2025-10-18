@@ -21,10 +21,10 @@ void ChannelsClientsManager::handleClientMessage(Client* client) {
 	for (std::string message = client->getNextMessage(); !message.empty(); message = client->getNextMessage())
 	{
 		// std::cout << "MESSAGE: "<< message << std::endl;
-		message += "\r\n"; // Add CRLF back for parsing
+		// message += "\r\n"; // Add CRLF back for parsing // TODO removed in getNextMessage
 		IRCCommand command(message);
 		if (!command.isValid()) {
-			client->sendMessage("TEMP_ERR :Invalid command format\r\n");
+			Reply::invalidCommand(*client, command.getCommand());
 			return;
 		}
 		else {
@@ -46,13 +46,14 @@ void ChannelsClientsManager::handleRegisteredClientMessage(Client* client, IRCCo
 		Reply::alreadyRegistered(*client);
 	else if (command.getCommand() == "NICK")
 	{
-		std::string newNick = command.getParams().at(0);
-		if (isNickInUse(newNick)) {
-			Reply::nicknameInUse(*client, newNick);
-		}
-		else {
-			client->setNickname(newNick); /// update channel invite list
-		}
+		setNickname(client, command);
+		// std::string newNick = command.getParams().at(0);
+		// if (isNickInUse(newNick)) {
+		// 	Reply::nicknameInUse(*client, newNick);
+		// }
+		// else {
+		// 	client->setNickname(newNick); /// update channel invite list
+		// }
 	}
 	else if (command.getCommand() == "JOIN")
 		executeJoin(client, command);
@@ -269,15 +270,16 @@ void ChannelsClientsManager::registerClient(Client* client, IRCCommand& command)
 		}
 	}
 	else if (command.getCommand() == "NICK") {
+		setNickname(client, command);
 		// Check if nickname is already in use
-		std::string nickname = command.getParams().at(0);
-		if (isNickInUse(nickname)) {
-			Reply::nicknameInUse(*client, nickname);
-			return;
-		}
-		else {
-			client->setNickname(nickname);
-		}
+		// std::string nickname = command.getParams().at(0);
+		// if (isNickInUse(nickname)) {
+		// 	Reply::nicknameInUse(*client, nickname);
+		// 	return;
+		// }
+		// else {
+		// 	client->setNickname(nickname);
+		// }
 	}
 	else if (command.getCommand() == "USER") {
 		std::string username = command.getParams().at(0);
@@ -715,4 +717,13 @@ void ChannelsClientsManager::removeClient(Client &client) {
 void ChannelsClientsManager::sendPingToClient(Client* client) {
 	std::string pingMessage = "PING " + std::string(SERVER_NAME) + "\r\n";
 	client->sendMessage(pingMessage);
+}
+
+void ChannelsClientsManager::setNickname(Client* client, IRCCommand& command) {
+	std::string newNick = command.getParamAt(0);
+	if (isNickInUse(newNick)) {
+		Reply::nicknameInUse(*client, newNick);
+		return;
+	}
+	client->setNickname(newNick);
 }

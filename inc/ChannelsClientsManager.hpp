@@ -47,6 +47,7 @@ private:
 	// void							setNick(Client* client, IRCCommand& command);
 	// Registration
 	bool							isNickInUse(const std::string& nickname) const;
+	void							setNickname(Client* client, IRCCommand& command);
 	void							registerClient(Client* client, IRCCommand& command);
 	void							handleRegisteredClientMessage(Client* client, IRCCommand& command);
 	// Command execution

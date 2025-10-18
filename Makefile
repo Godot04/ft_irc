@@ -11,10 +11,7 @@ SRCS = main.cpp \
        Server.cpp \
        Client.cpp \
        Channel.cpp \
-       Command.cpp \
-	   Command_utils.cpp \
 	   Reply.cpp \
-	   Server_Commands.cpp \
 	   IRCCommand.cpp \
 	   ChannelsClientsManager.cpp
 

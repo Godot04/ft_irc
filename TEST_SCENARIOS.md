@@ -25,15 +25,6 @@ This document lists focused manual and automated test scenarios to exercise the 
   - Server rejects registration with a password error reply; client not registered.
 - Code: `ChannelsClientsManager::registerClient`, `Reply::passwordMismatch`.
 
-## 3. CAP negotiation blocking registration
-- Steps:
-  1. Send `PASS correct` + `CAP LS` or `CAP REQ`.
-  2. Do not send `CAP END`.
-  3. Send `NICK/USER`.
-- Expected:
-  - Registration should not finish until `CAP END` (if implemented).
-- Code: `ChannelsClientsManager::registerClient`, `IRCCommand::handleCapCmd`.
-
 ## 4. Duplicate nickname handling ✅
 - Steps:
   1. Client A registers as `bob`.

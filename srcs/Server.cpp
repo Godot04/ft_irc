@@ -1,9 +1,17 @@
 #include "../inc/ft_irc.hpp"
 #include "Reply.hpp"
+#include <csignal>
+
+static volatile sig_atomic_t g_terminate = 0;
+static void handle_sigint(int)
+{
+    g_terminate = 1;
+}
 
 Server::Server(int port, const std::string& password, time_t timeToLive)
     : _port(port), _password(password), _clientTimeToLive(timeToLive), _manager(_clients, _password, _pollfds)
 {
+    std::signal(SIGINT, handle_sigint);
     // Create socket
     // AF_INET      IPv4 Internet protocols
     // SOCK_STREAM is for TCP
@@ -82,10 +90,6 @@ Server::~Server()
         delete it->second;
     }
 
-    // Delete all channels
-    for (std::map<std::string, Channel*>::iterator it = _channels.begin(); it != _channels.end(); ++it)
-        delete it->second;
-
     // Close server socket
     close(_socket);
     std::cout << "Server shut down" << std::endl;
@@ -97,7 +101,9 @@ void Server::start()
 
     while (true)
     {
-        if (poll(&_pollfds[0], _pollfds.size(), 5000) < 0) /// exit after period of time in milliseconds
+        if (g_terminate) // break quickly if signal already received
+            break;
+        if (poll(&_pollfds[0], _pollfds.size(), 50000) < 0) /// exit after period of time in milliseconds
         {
             if (errno == EINTR)
                 continue;
@@ -129,8 +135,10 @@ void Server::start()
             if (client != NULL) {
                 if (client->getTimePassed() >= _clientTimeToLive)
                     _manager.removeClient(*client);
-                else if (client->getTimePassed() >= _clientTimeToLive / 2)
+                else if (client->getTimePassed() >= _clientTimeToLive / 2 && SEND_PING_AT_HALF_TIME)
+                {
                     _manager.sendPingToClient(client);
+                }
                 continue;
             }
         }
@@ -192,7 +200,7 @@ void Server::handleClientMessage(int clientfd)
     memset(buffer, 0, sizeof(buffer));
     ssize_t bytes_read = recv(clientfd, buffer, BUFFER_SIZE, 0);
     // std::cout << "ClientFD is: " << clientfd << std::endl;
-    std::cout << "Bytes read: " << bytes_read << std::endl;
+    // std::cout << "Bytes read: " << bytes_read << std::endl;
     if (bytes_read <= 0)
     {
         if (bytes_read == 0 || errno != EAGAIN)
@@ -209,196 +217,9 @@ void Server::handleClientMessage(int clientfd)
     {
         return ; // Wait for more data
     }
-    _manager.handleClientMessage(client); // TODO so
-    // Command cmd(this, )
-    // std::cout << "[Server] Received message: " << client->getBuffer() << " client status: " << (client->isRegistered() ? "Registered" : "Not Registered") << std::endl;
-    // for (std::string message = client->getNextMessage(); !message.empty(); message = client->getNextMessage())
-    // {
-    //     std::istringstream iss(message);
-    //     registerClient(client, iss);
-    //     if (client->isRegistered())
-    //     {
-    //         std::istringstream cmdIss(message);  // reset to start
-    //         if (handleOperatorCommand(client, cmdIss))
-    //             continue;
-    //         if (handleClientCommands(client, cmdIss)) {
-    //             if (client->isRegistered() &&
-    //                 std::find(client->getChannels().begin(), client->getChannels().end(), "#general") == client->getChannels().end())
-    //             {
-    //                 bool the_first_one = false;
-    //                 std::string defaultChannel = "#general";
-    //                 Channel* channel;
-    //                 if (_channels.find(defaultChannel) == _channels.end())
-    //                 {
-    //                     channel = new Channel(defaultChannel);
-    //                     _channels[defaultChannel] = channel;
-    //                     the_first_one = true;
-    //                     channel->setTopic("Channel for old fellows\r\n");
-    //                 }
-    //                 else
-    //                     channel = _channels[defaultChannel];
-    //                 if (the_first_one)
-    //                     channel->addOperator(client);
-    //                 else
-    //                     channel->addClient(client);
-    //                 client->addChannel(defaultChannel);
-    //                 std::string join_msg = ":" + client->getNickname() + "!" + client->getUsername() + "@" + client->getHostname() + " JOIN :" + defaultChannel + "\r\n";
-    //                 client->sendMessage(join_msg);
-    //                 channel->broadcast(join_msg, client);
-    //                 client->sendMessage(channel->getTopic() + "\r\n");
-    //             }
-    //             std::istringstream cmdIss(message);  // reset to start
-    //             // else if () // other commands for operators
-    //         }
-    //     }
-    // }
+    _manager.handleClientMessage(client);
+
     client->clearBuffer();
     if (PRINT_CLIENT_INFO && client->isRegistered())
         client->printClientInfo();
-}
-
-// void Server::registerClient(Client* client, std::istringstream& iss) {
-//     std::string command;
-//     iss >> command;
-//     if (command == "CAP") {
-//         handleCAP(client, iss);
-//     }
-//     if (command == "PASS") {
-//         processPassword(client, iss);
-//     }
-//     else if (!client->isAuthenticated())
-//         Reply::passwordMismatch(*client);
-//     else if (command == "NICK")
-//         processNick(client, iss);
-//     else if (command == "USER")
-//         processUser(client, iss);
-//     else if (!client->isRegistered())
-//         Reply::unknownCommand(*client, command);
-//     if (!client->isRegistered() && client->isAuthenticated() && client->isNicknameSet() && client->isUsernameSet() && !client->isCAPNegotiation())
-//     {
-//         client->setRegistered(true);
-//     }
-// }
-
-// void Server::handleCAP(Client* client, std::istringstream& iss) {
-//     std::string subcommand;
-//     iss >> subcommand;
-//     if (!client->isCAPNegotiation()) {
-//         if (subcommand == "LS") {
-//             client->sendMessage("CAP * LS :\r\n");
-//             client->setCAPNegotiation(true);
-//         }
-//         else if (subcommand == "REQ") {
-//             client->sendMessage("CAP * ACK :\r\n");
-//             client->setCAPNegotiation(true);
-//         }
-//     }
-//     else if (subcommand == "END") {
-//         client->setCAPNegotiation(false);
-//     }
-// }
-
-// void Server::processPassword(Client* client, std::istringstream& iss) {
-//     std::string password;
-//     iss >> password;
-//     if (client->isAuthenticated())
-//         Reply::alreadyRegistered(*client);
-//     else if (password == _password)
-//         client->setAuthenticated(true);
-//     else
-//         Reply::passwordMismatch(*client);
-// }
-
-// void Server::processNick(Client* client, std::istringstream& iss) {
-//     std::string nickname;
-//     iss >> nickname;
-
-//     bool nickname_in_use = false;
-//     for (std::map<int, Client*>::iterator it = _clients.begin(); it != _clients.end(); ++it)
-//     {
-//         if (it->second->getNickname() == nickname)
-//         {
-//             nickname_in_use = true;
-//             break;
-//         }
-//     }
-//     if (nickname_in_use) {
-//         Reply::nicknameInUse(*client, nickname);
-//     }
-//     else {
-//         client->setNickname(nickname);
-//     }
-// }
-
-// // <username>: The user's username/ident.
-// // <hostname>: Usually 0 or * (ignored by most servers).
-// // <servername>: Usually * (ignored by most servers).
-// // <realname>: The user's real name (can contain spaces, must be prefixed by :).
-// // USER <username> 0 * :<realname>\r\n  => e.g. USER coolguy 0 * :Cool Guy
-// void Server::processUser(Client* client, std::istringstream& iss) {
-//     std::string username, hostname, servername, realname;
-//     iss >> username >> hostname >> servername;
-
-//     // Parse realname (can contain spaces)
-//     std::getline(iss, realname);
-//     while (realname[0] == ' ')
-//         realname = realname.substr(1);
-//     if (!realname.empty() && realname[0] == ':')
-//         realname = realname.substr(1);
-//     else if (realname.empty()) {
-//         Reply::unknownCommand(*client, "USER");
-//         return;
-//     }
-//     else {
-//         Reply::needMoreParams(*client, "USER");
-//         return;
-//     }
-//     client->setUsername(username);
-//     client->setRealname(realname);
-//     // if (!client->getNickname().empty())
-//     //     client->setRegistered(true);
-// }
-
-// // void Server::removeClient(int clientfd)
-// // {
-// //     if (_clients.find(clientfd) == _clients.end())
-// //         return;
-// //     Client *client = _clients[clientfd];
-// //     // Remove from channels
-// //     for (std::vector<std::string>::iterator it = client->getChannels().begin(); it != client->getChannels().end(); ++it)
-// //     {
-// //         std::map<std::string, Channel*>::iterator chIt = _channels.find(*it);
-// //         if (chIt != _channels.end() && chIt->second)
-// //             chIt->second->removeClient(client);
-// //     }
-// //     // Remove from pollfds
-// //     for (std::vector<pollfd>::iterator it = _pollfds.begin(); it != _pollfds.end(); ++it)
-// //     {
-// //         if (it->fd == clientfd)
-// //         {
-// //             _pollfds.erase(it);
-// //             break;
-// //         }
-// //     }
-// //     // Close socket and delete client
-// //     // Reply::connectionClosed(*client);
-// //     close(clientfd);
-// //     std::cout << "Client disconnected (fd: " << clientfd << ")" << std::endl;
-// //     delete client;
-// //     _clients.erase(clientfd);
-// // }
-
-std::map<int, Client*>& Server::getClients()
-{
-    return _clients;
-}
-
-std::map<std::string, Channel*>& Server::getChannels()
-{
-    return _channels;
-}
-
-const std::string& Server::getPassword() const
-{
-    return _password;
 }
