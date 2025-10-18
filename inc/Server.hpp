@@ -34,20 +34,18 @@ private:
 public:
     Server(int port, const std::string& password, time_t clientTimeToLive);
     ~Server();
-
     void    start();
     void    handleNewConnection();
     void    handleClientMessage(int clientfd);
-    bool    handleClientCommands(Client *client, std::istringstream &iss);
-    void    removeClient(int clientfd);
-    void    registerClient(Client* client, std::istringstream& iss);
-    void	processPassword(Client* client, std::istringstream& iss);
-	void	processNick(Client* client, std::istringstream& iss);
-	void	processUser(Client* client, std::istringstream& iss);
-    void    handleCAP(Client* client, std::istringstream& iss);
-    bool    handleOperatorCommand(Client* client, std::istringstream& iss);
-    bool    processKick(Client* client, std::istringstream& iss);
-    
+    // bool    handleClientCommands(Client *client, std::istringstream &iss);
+    // void    removeClient(int clientfd); // move to channels_clients_manager
+    // void    registerClient(Client* client, std::istringstream& iss);
+    // void	processPassword(Client* client, std::istringstream& iss);
+	// void	processNick(Client* client, std::istringstream& iss);
+	// void	processUser(Client* client, std::istringstream& iss);
+    // void    handleCAP(Client* client, std::istringstream& iss);
+    // bool    handleOperatorCommand(Client* client, std::istringstream& iss);
+    // bool    processKick(Client* client, std::istringstream& iss);
     // Getters
     std::map<int, Client*>&              getClients();
     std::map<std::string, Channel*>&     getChannels();

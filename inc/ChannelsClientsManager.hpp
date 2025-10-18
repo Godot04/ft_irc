@@ -27,7 +27,7 @@ class ChannelsClientsManager {
 public:
     ChannelsClientsManager(std::map<int, Client*> &clients, std::string const &password, std::vector<pollfd> &pollfds);
     ~ChannelsClientsManager();
-	void setClientsMap(std::map<int, Client*> *clients, std::string const *password, std::vector<pollfd> *pollfds);
+	// void setClientsMap(std::map<int, Client*> *clients, std::string const *password, std::vector<pollfd> *pollfds);
 	void handleClientMessage(Client* client);
     // void addClientToChannel(Client* client, Channel* channel);
     // void removeClientFromChannel(Client* client, Channel* channel);
