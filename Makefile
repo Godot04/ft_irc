@@ -8,15 +8,12 @@ OBJ_DIR = objs/
 INC_DIR = inc/
 
 SRCS = main.cpp \
-	Server.cpp \
-	Client.cpp \
-	Channel.cpp \
-	Command.cpp \
-	Command_utils.cpp \
-	Reply.cpp \
-	Server_Commands.cpp \
-	IRCCommand.cpp \
-	ChannelsClientsManager.cpp
+       Server.cpp \
+       Client.cpp \
+       Channel.cpp \
+	   Reply.cpp \
+	   IRCCommand.cpp \
+	   ChannelsClientsManager.cpp
 
 OBJS = $(addprefix $(OBJ_DIR), $(SRCS:.cpp=.o))
 

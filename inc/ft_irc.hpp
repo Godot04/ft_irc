@@ -16,11 +16,10 @@
 #include <cerrno>
 #include <sstream>
 
-#define BUFFER_SIZE 512
+#define BUFFER_SIZE 1024
 
 #include "Server.hpp"
 #include "Client.hpp"
 #include "Channel.hpp"
-#include "Command.hpp"
 
 #endif

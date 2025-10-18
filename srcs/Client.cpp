@@ -25,7 +25,7 @@ std::string Client::getNextMessage()
     if (pos == std::string::npos)
         return "";
 
-    std::string message = _buffer.substr(0, pos);
+    std::string message = _buffer.substr(0, pos + 2);
     _buffer = _buffer.substr(pos + 2);
     return message;
 }

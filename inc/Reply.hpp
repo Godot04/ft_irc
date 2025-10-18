@@ -25,6 +25,7 @@ public:
 	static void notOnChannel(const Client& client, const std::string& channel);
 	static void usersDontMatch(const Client& client);
 	static void notOperator(const Client& client, const std::string& channel);
+	static void invalidCommand(const Client& client, const std::string& command);
 };
 
 #endif // REPLY_HPP
