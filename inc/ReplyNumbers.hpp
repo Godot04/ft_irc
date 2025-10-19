@@ -2,6 +2,7 @@
 #define REPLIES_HPP
 
 // IRC Reply codes as macros
+#define NO_ERROR			  ""
 #define SERVER_NAME           "ft_irc.42.de"
 #define ERR_NOSUCHNICK        "401"
 #define ERR_NOSUCHSERVER      "402"
@@ -47,6 +48,7 @@
 #define ERR_NOOPERHOST        "491"
 #define ERR_UMODEUNKNOWNFLAG  "501"
 #define ERR_USERSDONTMATCH    "502"
+#define ERR_MSGTOOLONG		  "503"
 
 #define RPL_WELCOME           "001"
 #define RPL_YOURHOST          "002"

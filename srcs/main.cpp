@@ -7,7 +7,7 @@ int main(int argc, char **argv)
         std::cerr << "Usage: " << argv[0] << " <port> <password>" << std::endl;
         return 1;
     }
-    
+
     int port = std::atoi(argv[1]);
     // check if port is between 1024 and 65535??
     if (port <= 0 || port > 65535)
@@ -21,10 +21,10 @@ int main(int argc, char **argv)
         std::cerr << "Error: Password cannot be empty" << std::endl;
         return 1;
     }
-    
+
     try
     {
-        Server server(port, password);
+        Server server(port, password, 400);
         server.start();
     }
     catch (std::exception &e)
@@ -32,6 +32,6 @@ int main(int argc, char **argv)
         std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
-    
+
     return 0;
 }

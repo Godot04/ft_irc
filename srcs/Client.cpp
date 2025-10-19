@@ -1,7 +1,7 @@
 #include "../inc/ft_irc.hpp"
 
 Client::Client(int fd)
-    : _fd(fd), _authenticated(false), _registered(false), _isCAPNegotiation(false)
+    : _fd(fd), _authenticated(false), _registered(false), _isCAPNegotiation(false), _connectionTime(time(NULL))
 {
 }
 
@@ -12,6 +12,10 @@ Client::~Client()
 void Client::addToBuffer(const std::string& msg)
 {
     _buffer += msg;
+    if (_buffer.size() > 2048) {
+        Reply::messageTooLong(*this);
+        _buffer.clear();
+    }
 }
 
 bool Client::hasCompleteMessage() const
@@ -25,7 +29,7 @@ std::string Client::getNextMessage()
     if (pos == std::string::npos)
         return "";
 
-    std::string message = _buffer.substr(0, pos);
+    std::string message = _buffer.substr(0, pos + 2);
     _buffer = _buffer.substr(pos + 2);
     return message;
 }
@@ -145,6 +149,14 @@ bool Client::isCAPNegotiation() const
 void Client::setCAPNegotiation(bool status)
 {
     _isCAPNegotiation = status;
+}
+
+void Client::updateConnectionTime() {
+    _connectionTime = time(NULL); // in seconds
+}
+
+time_t Client::getTimePassed() const {
+    return time(NULL) - _connectionTime;
 }
 
 void Client::printClientInfo() const

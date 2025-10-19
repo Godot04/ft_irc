@@ -16,7 +16,7 @@ std::string Reply::build(const std::string& code, const std::string& target, con
 
 // Example reply builders (add more as needed)
 void Reply::welcome(const Client& client) {
-    client.sendMessage(Reply::build(RPL_WELCOME, client.getNickname(), "Welcome to the ft_IRC Network, " + client.getNickname()));
+    client.sendMessage(Reply::build(RPL_WELCOME, client.getNickname(), "Welcome to the ft_IRC Network"));
 }
 
 void Reply::passwordMismatch(const Client& client) {
@@ -43,4 +43,38 @@ std::string Reply::noSuchNick(const std::string& target, const Client& client) {
     return build(ERR_NOSUCHNICK, target, client.getNickname() + " No such nick/channel");
 }
 
+void Reply::connectionClosed(const Client& client) {
+    client.sendMessage("Connection closed\r\n");
+}
 
+void Reply::pongReply(const Client& client, const std::string& server) {
+    client.sendMessage("PONG " + server + "\r\n");
+}
+
+void Reply::pingToClient(const Client& client, const std::string& server) {
+    client.sendMessage("PING :" + server + "\r\n");
+}
+
+void Reply::noSuchChannel(const Client& client, const std::string& channel) {
+    client.sendMessage(build(ERR_NOSUCHCHANNEL, channel, " No such channel"));
+}
+
+void Reply::notOnChannel(const Client& client, const std::string& channel) {
+    client.sendMessage(build(ERR_NOTONCHANNEL, channel, " You're not on that channel"));
+}
+
+void Reply::usersDontMatch(const Client& client) {
+    client.sendMessage(build(ERR_USERSDONTMATCH, client.getNickname(), "Cannot change mode for other users"));
+}
+
+void Reply::notOperator(const Client& client, const std::string& channel) {
+    client.sendMessage(build(ERR_CHANOPRIVSNEEDED, channel, "You're not channel operator"));
+}
+
+void Reply::invalidCommand(const Client& client, const std::string& command) {
+    client.sendMessage(build(ERR_UNKNOWNCOMMAND, client.getNickname(), command + " :Invalid command format"));
+}
+
+void Reply::messageTooLong(const Client& client) {
+    client.sendMessage(build(ERR_MSGTOOLONG, client.getNickname(), "Message too long"));
+}
