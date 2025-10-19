@@ -238,11 +238,11 @@ void IRCCommand::handleModeCmd(std::istringstream &iss) {
         }
 
         if (_params.size() == 1 && word[0] != '#' && word[0] != '&') {
-            std::cout << "SETTING INVALID AT MODE #& USER" << std::endl;
+            // std::cout << "SETTING INVALID AT MODE #& USER" << std::endl;
             _errorNum = ERR_NEEDMOREPARAMS;
         }
         else if (_params.size() == 2 && !isFlagSetValid(word)) {
-            std::cout << "SETTING INVALID AT MODE FLAGS VALIDITY" << std::endl;
+            // std::cout << "SETTING INVALID AT MODE FLAGS VALIDITY" << std::endl;
             _errorNum = ERR_NEEDMOREPARAMS;
         }
         else if (_params.size() == 2) {
@@ -267,7 +267,7 @@ void IRCCommand::handleModeCmdParams(std::istringstream &iss) {
                 trimCRLF(param);
                 _params.push_back(param);
             } else {
-                std::cout << "SETTING INVALID AT MODE KEY/OPERATOR" << std::endl;
+                // std::cout << "SETTING INVALID AT MODE KEY/OPERATOR" << std::endl;
                 _isValid = false;
                 _errorNum = ERR_NEEDMOREPARAMS;
                 return ;
@@ -291,7 +291,7 @@ void IRCCommand::handleModeCmdParams(std::istringstream &iss) {
                 }
                 _params.push_back(limitParam);
             } else {
-                std::cout << "SETTING INVALID AT MODE LIMIT USER" << std::endl;
+                // std::cout << "SETTING INVALID AT MODE LIMIT USER" << std::endl;
                 _isValid = false;
                 _errorNum = ERR_NEEDMOREPARAMS;
                 return ;

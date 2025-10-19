@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include "../../inc/Command.hpp"
 #include "../../inc/Server.hpp"
 #include "../../inc/Client.hpp"
 #include "../../inc/IRCCommand.hpp"

@@ -74,3 +74,7 @@ void Reply::notOperator(const Client& client, const std::string& channel) {
 void Reply::invalidCommand(const Client& client, const std::string& command) {
     client.sendMessage(build(ERR_UNKNOWNCOMMAND, client.getNickname(), command + " :Invalid command format"));
 }
+
+void Reply::messageTooLong(const Client& client) {
+    client.sendMessage(build(ERR_MSGTOOLONG, client.getNickname(), "Message too long"));
+}

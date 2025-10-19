@@ -31,10 +31,7 @@ set(SERVER_SOURCES
     ${CMAKE_SOURCE_DIR}/../srcs/ChannelsClientsManager.cpp
     ${CMAKE_SOURCE_DIR}/../srcs/IRCCommand.cpp
     ${CMAKE_SOURCE_DIR}/../srcs/Reply.cpp
-    ${CMAKE_SOURCE_DIR}/../srcs/SCError.cpp
-    ${CMAKE_SOURCE_DIR}/../srcs/Command.cpp
-    ${CMAKE_SOURCE_DIR}/../srcs/Command_utils.cpp
-    ${CMAKE_SOURCE_DIR}/../srcs/Server_Commands.cpp
+
 )
 
 # # Add your test executables

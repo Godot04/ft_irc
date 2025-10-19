@@ -34,6 +34,7 @@ void ChannelsClientsManager::handleClientMessage(Client* client) {
 		}
 		else {
 			client->updateConnectionTime();
+			// std::cout << "Complete message: " << message << std::endl;
 			if (!client->isRegistered()) {
 				registerClient(client, command);
 			}
@@ -154,13 +155,17 @@ void ChannelsClientsManager::handleModeFlags(Client &client, Channel &channel, I
 					}
 					break;
 				case MODE_KEY: {
-					if (paramIndex >= modeParams.size()) {
+					if (paramIndex >= modeParams.size() && currentSign == PLUS) {
                         client.sendMessage(":" + std::string(SERVER_NAME) + " 461 " + client.getNickname() + " MODE :Not enough parameters\r\n");
                         break;
                     }
-					std::string key = modeParams[paramIndex];
-					channel.setKey(key);
-					paramIndex++;
+					if (currentSign == PLUS) {
+						std::string key = modeParams[paramIndex];
+						channel.setKey(key);
+						paramIndex++;
+					}
+					else
+						channel.setKey("");
 					break;
 				}
 				case MODE_LIMIT_USER: {
@@ -671,13 +676,15 @@ Channel* ChannelsClientsManager::getChannel(std::string const &channelName) {
 	return NULL;
 }
 
-void ChannelsClientsManager::removeClient(Client &client) {
-	// Remove client from all channels
-	std::vector<std::string>& clientChannels = client.getChannels();
-	for (size_t i = 0; i < clientChannels.size(); ++i) {
+void ChannelsClientsManager::removeClient(Client &client)
+{
+	std::vector<std::string> clientChannels = client.getChannels();
+	for (size_t i = 0; i < clientChannels.size(); ++i)
+	{
 		std::string channelName = clientChannels[i];
 		Channel* channel = getChannel(channelName);
-		if (channel) {
+		if (channel)
+		{
 			channel->removeClient(&client);
 			// If the channel is empty after removal, delete it
 			if (channel->getClients().empty()) {

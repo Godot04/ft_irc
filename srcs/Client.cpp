@@ -12,6 +12,10 @@ Client::~Client()
 void Client::addToBuffer(const std::string& msg)
 {
     _buffer += msg;
+    if (_buffer.size() > 2048) {
+        Reply::messageTooLong(*this);
+        _buffer.clear();
+    }
 }
 
 bool Client::hasCompleteMessage() const
