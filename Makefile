@@ -46,28 +46,28 @@ test_clean:
 re: fclean all
 
 run_server: re
-	./ft_irc_serv 1201 123
+	./ircserv 1201 123
 
 gdb: re
-	gdb ./ft_irc_serv
+	gdb ./ircserv
 
 debug_run:
 	make re CXXFLAGS="-g -O0 -std=c++98 -Wall -Wextra"
-	gdb --args ./ft_irc_serv 1201 123
+	gdb --args ./ircserv 1201 123
 
 valgrind_deep: re
-	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ft_irc_serv 1201 123
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --track-fds=yes ./ircserv 1201 123
 
 clone_google_test:
 	mkdir -p googletests/googletest
 	git clone https://github.com/google/googletest.git googletests/googletest
 
 gdb: re
-	gdb ./ft_irc_serv
+	gdb ./ircserv
 
 debug_run:
 	make re CXXFLAGS="-g -O0 -std=c++98 -Wall -Wextra"
-	gdb --args ./ft_irc_serv 1201 123
+	gdb --args ./ircserv 1201 123
 
 set_build:
 	mkdir -p googletests/build
