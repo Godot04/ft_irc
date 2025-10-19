@@ -27,9 +27,9 @@ public:
         switch (c) {
             case 'i': return MODE_INVITE;
             case 't': return MODE_TOPIC;
-            case 'k': return MODE_KEY;
+            case 'k': return MODE_KEY; //
             case 'o': return MODE_OPERATOR;
-            case 'l': return MODE_LIMIT_USER;
+            case 'l': return MODE_LIMIT_USER; //
 		default:  return MODE_UNKNOWN;
         }
     }

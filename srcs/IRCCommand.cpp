@@ -415,43 +415,45 @@ void IRCCommand::handleKickCmd(std::istringstream &iss)
 {
     std::string target_channel;
     std::string target_nick;
-
-    iss >> target_channel >> target_nick;
-
-    trimCRLF(target_channel);
-    trimCRLF(target_nick);
-
-    if (target_channel.empty() || target_nick.empty()) {
+    std::string tmp;
+    iss >> tmp;
+    if (tmp[0] != '#' && tmp[0] != '&')
+        iss >> target_channel;
+    else
+        target_channel = tmp;
+    iss >> target_nick;
+    if (target_channel.empty() || target_nick.empty())
+    {
         _isValid = false;
         _errorNum = ERR_NEEDMOREPARAMS;
         if (!target_channel.empty())
+        {
+            trimCRLF(target_channel);
             _params.push_back(target_channel);
+        }
         if (!target_nick.empty())
+        {
+            trimCRLF(target_nick);
             _params.push_back(target_nick);
+        }
         return;
     }
-
+    if (target_nick[0] == ':')
+        target_nick = target_nick.substr(1);
+    trimCRLF(target_channel);
+    trimCRLF(target_nick);
     _params.push_back(target_channel);
     _params.push_back(target_nick);
-
-    // Read optional kick message
     std::string kick_message;
     std::getline(iss, kick_message);
-
-    // Trim leading spaces
     size_t firstNonSpace = kick_message.find_first_not_of(" \t");
     if (firstNonSpace != std::string::npos)
         kick_message = kick_message.substr(firstNonSpace);
-
-    // Check if message starts with ':'
     if (!kick_message.empty() && kick_message[0] == ':')
         kick_message = kick_message.substr(1);
-
     trimCRLF(kick_message);
-
     if (!kick_message.empty())
         _params.push_back(kick_message);
-
     _isValid = true;
 }
 

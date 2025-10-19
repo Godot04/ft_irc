@@ -577,55 +577,12 @@ void ChannelsClientsManager::executeTopic(Client* client, IRCCommand& command)
 
 void ChannelsClientsManager::executeKick(Client* client, IRCCommand& command)
 {
-	if (command.getParamsCount() < 2)
-	{
-		client->sendMessage("server 461: Not enough parameters for KICK\r\n");
-		return;
-	}
 	const std::vector<std::string>& params = command.getParams();
-	std::string target_channel;
-	std::string target_nick;
-	std::string kick_message = "No specific reason";
-	if (params[0][0] == '#' || params[0][0] == '&')
+	std::string target_channel = params[0];
+	std::string target_nick = params[1];
+	if (target_channel[0] != '#' && target_channel[0] != '&')
 	{
-		target_channel = params[0];
-		target_nick = params[1];
-		if (command.getParamsCount() >= 3)
-			kick_message = params[2];
-	}
-	else
-	{
-		for (size_t i = 0; i < params.size(); i++)
-			std::cout << params[i] << " ";
-		std::cout << std::endl;
-		bool found_channel = false;
-		for (size_t i = 0; i < params.size(); ++i)
-		{
-			std::cout << params[i] << std::endl;
-			if (!params[i].empty() && (params[i][0] == '#' || params[i][0] == '&'))
-			{
-				target_channel = params[i];
-				found_channel = true;
-				if (i > 0)
-					target_nick = params[i - 1];
-				else if (i + 1 < params.size())
-					target_nick = params[i + 1];
-				if (i + 2 < params.size())
-					kick_message = params[i + 2];
-				else if (i > 1 && i + 1 >= params.size())
-					kick_message = params[i - 2];
-				break;
-			}
-		}
-		if (!found_channel)
-		{
-			client->sendMessage("server 461: Invalid format for KICK\r\n");
-			return;
-		}
-	}
-	if (target_channel.empty() || target_nick.empty())
-	{
-		client->sendMessage("server 461 Invalid parameters for KICK\r\n");
+		client->sendMessage("Input must follow irc protocol (#channel or &channel)\r\n");
 		return;
 	}
 	if (_channels.find(target_channel) == _channels.end())
@@ -652,6 +609,11 @@ void ChannelsClientsManager::executeKick(Client* client, IRCCommand& command)
 		client->sendMessage("server 441: User doesn't have access to this channel\r\n");
 		return;
 	}
+	std::string kick_message;
+	if (command.getParamsCount() >= 3)
+		kick_message = params[2];
+	else
+		kick_message = "No specific reason";
 	channel->removeClient(target_user);
 	target_user->removeChannel(target_channel);
 	std::string formatted_msg = "User " + target_nick + " was kicked from " + target_channel
