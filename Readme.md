@@ -148,6 +148,6 @@ The project is split into small modules:
 - The server code is organized to keep parsing, state management, and reply generation separated
 - Command coverage and feature completeness should be kept in sync with the source code as the project evolves
 
-## Author
+## Authors
 
-**opopov**
+**opopov** and **zkhojazo**
