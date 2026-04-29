@@ -8,13 +8,6 @@
 
 **ft_irc** is a project that implements a lightweight IRC server in C++98. The server accepts multiple clients at the same time, keeps them registered, and routes IRC messages through a non-blocking event loop.
 
-The project helped me practice:
-- Network programming with TCP sockets
-- Event-driven server design with `poll()`
-- Client registration and message parsing
-- Shared state management for channels and users
-- IRC reply formatting and protocol handling
-
 ## Project Goals
 
 - Build a server that listens on a configurable port
@@ -141,12 +134,6 @@ The project is split into small modules:
 - **I/O Model**: non-blocking sockets with `poll()`
 - **Server Style**: single-process, event-driven
 - **Protocol**: IRC-inspired message handling
-
-## Notes
-
-- The current README focuses on the implemented server workflow rather than the protocol specification itself
-- The server code is organized to keep parsing, state management, and reply generation separated
-- Command coverage and feature completeness should be kept in sync with the source code as the project evolves
 
 ## Authors
 
